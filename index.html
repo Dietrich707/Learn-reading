@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Leesliga</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--gras:#1F8A4C;--gras2:#237F47;--nacht:#0E2140;--lijn:#F7F7F2;--bal:#FFC72C;--schoen:#FF7A1A;--inkt:#132238;--r:22px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{font-family:Fredoka,"Arial Rounded MT Bold","Segoe UI",system-ui,sans-serif;background:repeating-linear-gradient(90deg,var(--gras) 0 12.5vw,var(--gras2) 12.5vw 25vw);color:var(--lijn);min-height:100%;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+button{font:inherit;border:0;cursor:pointer;border-radius:999px}
+button:focus-visible{outline:4px solid var(--bal);outline-offset:3px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:10px;flex-wrap:wrap}
+.naam{font-weight:700;font-size:clamp(20px,3.4vw,30px)}
+.stadion{font-size:clamp(14px,2.4vw,20px);opacity:.9}
+.tellers{display:flex;align-items:center;gap:16px;font-weight:700;font-size:clamp(18px,3vw,28px)}
+.tellers span{display:flex;align-items:center;gap:5px}
+.tellers svg{width:1.1em;height:1.1em}
+.ouderknop{background:rgba(255,255,255,.18);color:var(--lijn);padding:10px 16px;font-size:16px;font-weight:600}
+.veld{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 20px 0}
+.bord{background:var(--nacht);border-radius:var(--r);padding:clamp(26px,5vh,54px) clamp(24px,6vw,70px);min-width:min(92vw,760px);max-width:94vw;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.35),inset 0 0 0 6px rgba(255,255,255,.06)}
+.woord{font-weight:700;font-size:clamp(46px,11vw,128px);line-height:1.05;letter-spacing:.02em;color:var(--lijn);word-break:break-word}
+.woord.zin{font-size:clamp(28px,5.6vw,64px);line-height:1.25;letter-spacing:.01em}
+.woord .kg{display:inline-block;cursor:pointer}
+.woord .kg:nth-child(odd){color:var(--bal)} .woord .kg:nth-child(even){color:#8FD3FF}
+.woord .kg.fout{background:var(--bal);color:var(--nacht);border-radius:.18em;padding:0 .08em;transform:scale(1.08)}
+.woord .streep{opacity:.35;color:var(--lijn);margin:0 .06em}
+.hint{margin-top:14px;min-height:1.6em;font-size:clamp(18px,2.8vw,26px);color:#CFE6D7}
+.balk{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.balk i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.18)}
+.balk i.ok{background:var(--bal)} .balk i.half{background:#8FD3FF} .balk i.skip{background:rgba(255,255,255,.4)}
+.acties{display:flex;align-items:center;justify-content:center;gap:clamp(14px,4vw,40px);padding:18px 20px 26px;flex-wrap:wrap}
+.mic{width:clamp(96px,18vw,140px);height:clamp(96px,18vw,140px);background:var(--lijn);display:grid;place-items:center;position:relative;box-shadow:0 10px 0 rgba(0,0,0,.28)}
+.mic svg{width:60%;height:60%}
+.mic.luistert{animation:puls 1s ease-in-out infinite}
+.mic.luistert::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:5px solid var(--bal);animation:ring 1s ease-out infinite}
+@keyframes puls{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes ring{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+.kn{padding:16px 26px;font-size:clamp(18px,2.8vw,24px);font-weight:600;color:var(--inkt);background:var(--lijn);box-shadow:0 6px 0 rgba(0,0,0,.25)}
+.kn.oranje{background:var(--schoen);color:#fff}
+.kn.klein{padding:10px 18px;font-size:16px;box-shadow:none;background:rgba(255,255,255,.18);color:var(--lijn)}
+.kn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.kn:disabled{opacity:.45;cursor:default}
+.ouderrij{display:flex;gap:10px;justify-content:center;padding:0 20px 14px;opacity:.85}
+.ouderrij span{font-size:14px;align-self:center;opacity:.8}
+.overlay{position:fixed;inset:0;background:rgba(14,33,64,.94);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.overlay.open{display:flex}
+.kaart{background:var(--lijn);color:var(--inkt);border-radius:var(--r);padding:26px;max-width:680px;width:100%;max-height:94vh;overflow:auto;text-align:center}
+.kaart h1{margin:0 0 6px;font-size:clamp(26px,5vw,42px);font-weight:700}
+.kaart h2{margin:22px 0 8px;font-size:20px;text-align:left}
+.kaart p{margin:6px 0;font-size:18px;line-height:1.4}
+.kaart .groot{font-size:clamp(40px,8vw,72px);font-weight:700;color:var(--gras);line-height:1.1}
+.kaart .kn{margin-top:14px}
+.kaart table{width:100%;border-collapse:collapse;font-size:15px;text-align:left}
+.kaart td,.kaart th{padding:6px 4px;border-bottom:1px solid #d7e2da}
+.kaart .lijst{text-align:left;font-size:16px;line-height:1.6}
+.kaart .rij{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #d7e2da;text-align:left}
+.kaart .rij select,.kaart .rij input{font:inherit;font-size:16px;padding:6px 10px;border-radius:10px;border:1px solid #b9c9be;max-width:55%}
+.kaart .kn.grijs{background:#d7e2da;color:var(--inkt);box-shadow:none;font-size:15px;padding:10px 16px;margin:6px 4px 0}
+.kaart .kn.rood{background:#c0392b;color:#fff;box-shadow:none;font-size:15px;padding:10px 16px}
+.mini{font-size:14px;opacity:.75}
+.confetti{position:fixed;top:-20px;width:12px;height:18px;z-index:11;animation:val 2.4s linear forwards;pointer-events:none}
+@keyframes val{to{transform:translateY(110vh) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){.mic.luistert,.mic.luistert::after,.confetti{animation:none}}
+
+/* kleedkamer (thuisscherm) */
+.thuis{background:var(--nacht)}
+.thuis .kaart{background:transparent;color:var(--lijn);max-width:900px;padding:6px;max-height:98vh}
+.spelers{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+.spelers button{padding:8px 16px;background:rgba(255,255,255,.14);color:var(--lijn);font-weight:600;font-size:16px}
+.spelers button.actief{background:var(--bal);color:var(--nacht)}
+.kleedkamer{display:grid;grid-template-columns:minmax(200px,1fr) minmax(220px,1.2fr);gap:14px;align-items:center}
+@media (max-width:560px){.kleedkamer{grid-template-columns:1fr}}
+.figuur{width:100%;display:flex;justify-content:center}.figuur svg{width:auto;height:min(52vh,420px);max-width:100%}
+.tegels{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tegel{background:rgba(255,255,255,.1);border-radius:18px;padding:14px;color:var(--lijn);text-align:left;box-shadow:none}
+.tegel b{display:block;font-size:20px} .tegel small{opacity:.8;font-size:14px}
+.tegel.start{background:var(--schoen);grid-column:1/-1;text-align:center}
+.tegel.start b{font-size:26px}
+.statrij{display:flex;justify-content:center;gap:22px;font-size:18px;margin:8px 0 4px}
+.statrij span{display:flex;align-items:center;gap:6px;font-weight:600}
+.statrij svg{width:1.2em;height:1.2em}
+
+/* winkel */
+.winkelrij{text-align:left;margin-top:14px}
+.winkelrij h3{margin:0 0 6px;font-size:17px;font-weight:600;display:flex;justify-content:space-between}
+.winkelrij h3 small{font-weight:400;opacity:.65}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.item{background:#fff;border-radius:16px;padding:8px;text-align:center;border:2px solid transparent;box-shadow:none;color:var(--inkt);width:100%}
+.item svg{width:64px;height:64px;display:block;margin:0 auto 4px}
+.item b{display:block;font-size:14px;font-weight:600}
+.item small{font-size:13px;color:#4c6b58}
+.item.bezit{border-color:var(--gras)} .item.aan{background:#e3f4e8;border-color:var(--gras)}
+.item.dicht{opacity:.5}
+.item.teduur small{color:#b04a2e}
+.garage{background:#2b2f36;border-radius:18px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:140px}
+.garage svg{width:150px;height:80px}
+.garage .leeg{color:#aab;font-size:16px;align-self:center}
+.stadionkader{position:relative;margin:6px auto 10px;max-width:800px}
+.stadionbeeld svg{width:100%;height:auto;display:block;border-radius:16px}
+.stadionkader .figuur{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);width:auto}
+.stadionkader .figuur svg{height:min(26vh,200px);width:auto}
+.tegels{grid-template-columns:1fr 1fr 1fr}
+@media (max-width:560px){.tegels{grid-template-columns:1fr 1fr}}
+.tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px}
+.tabs button{padding:8px 14px;background:#d7e2da;color:var(--inkt);font-weight:600;font-size:15px}
+.tabs button.actief{background:var(--gras);color:#fff}
+.item.stadionitem svg{width:120px;height:64px}
+.doos{width:160px;height:160px;margin:6px auto}
+.doos svg{width:100%;height:100%}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div><div class="naam" id="naam"></div><div class="stadion" id="reeksTop"></div></div>
+  <div class="tellers">
+    <span title="Doelpunten deze wedstrijd"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#132238" stroke-width="1.5"/><path d="M12 7l4.5 3.3-1.7 5.3H9.2L7.5 10.3 12 7z" fill="#132238"/><path d="M12 2.5V7M7.5 10.3l-4-1.5M16.5 10.3l4-1.5M14.8 15.6l2.6 3.6M9.2 15.6l-2.6 3.6" stroke="#132238" stroke-width="1.5"/></svg><b id="doelen">0</b></span>
+    <span title="Punten"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FFC72C"/><circle cx="12" cy="12" r="7" fill="none" stroke="#b8860b" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#7a5a00">P</text></svg><b id="puntenTop">0</b></span>
+  </div>
+  <div style="display:flex;gap:8px"><button class="ouderknop" id="thuisKnop">Kleedkamer</button><button class="ouderknop" id="ouderKnop">Ouder</button></div>
+</div>
+
+<div class="veld"><div class="bord"><div class="woord" id="woord"></div><div class="hint" id="hint"></div><div class="balk" id="balk"></div></div></div>
+
+<div class="acties">
+  <button class="kn klein" id="luisterKnop">Lees voor</button>
+  <button class="mic" id="micKnop" aria-label="Lees het woord hardop"><svg viewBox="0 0 24 24" fill="none" stroke="#132238" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#132238"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></button>
+  <button class="kn oranje" id="verderKnop">Verder</button>
+</div>
+<div class="ouderrij"><span>Papa of mama:</span><button class="kn klein" id="goedKnop">Goed gelezen</button><button class="kn klein" id="nogKnop">Nog eens</button></div>
+
+<!-- kleedkamer -->
+<div class="overlay thuis open" id="thuisOv"><div class="kaart">
+  <div class="spelers" id="spelers"></div>
+  <div class="statrij"><span id="streakTxt"><svg viewBox="0 0 24 24"><path d="M12 2c1 4 5 5 5 11a5 5 0 0 1-10 0c0-2 1-3 1-3s0 3 2 3c1 0 2-1 2-3 0-3-2-4 0-8z" fill="#FF7A1A"/><path d="M12 12c.5 2 2 3 2 5a2 2 0 0 1-4 0c0-1 .5-2 .5-2s0 1 1 1c.5 0 1-1 .5-4z" fill="#FFC72C"/></svg><b id="streakN">0</b> dagen</span><span><b id="puntenThuis">0</b> punten</span><span><b id="doelenThuis">0</b> doelpunten</span></div>
+  <div class="stadionkader"><div id="stadion" class="stadionbeeld"></div><div id="figuur" class="figuur"></div></div>
+  <div class="tegels">
+    <button class="tegel start" id="startKnop"><b>Start de wedstrijd</b><small id="micStatus"></small></button>
+    <button class="tegel" id="winkelKnop"><b>Winkel</b><small id="winkelSub"></small></button>
+    <button class="tegel" id="bouwKnop"><b>Stadion bouwen</b><small id="bouwSub"></small></button>
+    <button class="tegel" id="garageKnop"><b>Garage</b><small id="garageSub"></small></button>
+    <button class="tegel" id="boekenKnop"><b>Boeken</b><small>Echte boeken tellen mee</small></button>
+    <button class="tegel" id="beloningKnop"><b>Sparen voor</b><small id="beloningSub"></small></button>
+  </div>
+  <p class="mini" style="margin-top:8px" id="stadionThuis"></p>
+  <button class="ouderknop" id="ouderKnop2" style="margin-top:4px">Ouder</button>
+</div></div>
+<div class="overlay" id="doosOv"><div class="kaart"><h1>Verrassingsdoos!</h1><div id="doosInhoud"></div><p id="doosTekst"></p><button class="kn oranje" id="doosKnop">Ja!</button></div></div>
+
+<div class="overlay" id="eindOv"><div class="kaart"><h1>Afgelopen!</h1><div class="groot" id="eindDoelen"></div><p id="eindTekst"></p><button class="kn oranje" id="opnieuwKnop">Nog een wedstrijd</button> <button class="kn" id="naarThuisKnop">Naar de kleedkamer</button></div></div>
+<div class="overlay" id="levelOv"><div class="kaart"><h1>Nieuwe reeks!</h1><div class="groot" id="levelNaam"></div><p>Je speelt nu hoger. Er staan nieuwe truitjes, auto's en stadionstukken in de winkel.</p><button class="kn oranje" id="levelKnop">Ga verder</button></div></div>
+
+<!-- winkel -->
+<div class="overlay" id="winkelOv"><div class="kaart"><h1 id="winkelTitel">Winkel</h1><p id="winkelPunten"></p><div class="tabs" id="winkelTabs"></div><div id="winkelInhoud"></div><button class="kn" id="winkelSluit">Terug</button></div></div>
+
+<!-- boeken -->
+<div class="overlay" id="boekenOv"><div class="kaart"><h1>Boeken</h1><p class="mini">Een echt boek gelezen? Papa of mama vult in hoeveel bladzijden, en dat levert punten op.</p>
+  <div class="rij"><span>Boek</span><input id="boekTitel" placeholder="Titel" maxlength="40"></div>
+  <div class="rij"><span>Bladzijden gelezen</span><input id="boekBlz" type="number" min="1" max="200" value="5"></div>
+  <button class="kn oranje" id="boekKnop">Toevoegen</button>
+  <h2>Gelezen</h2><div class="lijst" id="boekLijst"></div>
+  <button class="kn" id="boekenSluit">Terug</button></div></div>
+<!-- echte beloningen -->
+<div class="overlay" id="beloningOv"><div class="kaart"><h1>Sparen voor</h1><p id="beloningPunten"></p><div id="beloningInhoud"></div><button class="kn" id="beloningSluit">Terug</button></div></div>
+
+<!-- ouderpaneel -->
+<div class="overlay" id="ouderOv"><div class="kaart" style="text-align:left">
+  <h1 style="font-size:26px">Ouderpaneel</h1>
+  <p class="mini">Woordenlijsten opgesteld naar de opbouw van de AVI-niveaus, niet officieel genormeerd. Wat het kind ziet gaat alleen omhoog; de meting hieronder gaat op en neer.</p>
+  <h2>Opslag op de site</h2>
+  <div class="rij"><span>Gezinscode (zelfde code op elk toestel)</span><input id="setCode" placeholder="bijv. maxime-2026" maxlength="40"></div>
+  <p class="mini" id="syncStatus"></p>
+  <h2>Spelers</h2>
+  <div id="ouderSpelers"></div>
+  <div class="rij"><span>Nieuwe speler</span><input id="nieuwSpeler" placeholder="Naam" maxlength="14"><button class="kn grijs" id="nieuwSpelerKnop">Toevoegen</button></div>
+  <h2>Deze speler: <span id="ouderNaam"></span></h2>
+  <div class="rij"><span>Naam</span><input id="setNaam" maxlength="14"></div>
+  <div class="rij"><span>Microfoon luistert mee</span><select id="setMic"><option value="1">Aan</option><option value="0">Uit, ouder beoordeelt</option></select></div>
+  <div class="rij"><span>Klankgroepen tonen</span><select id="setHyph"><option value="fout">Alleen na een fout</option><option value="altijd">Altijd</option><option value="nooit">Nooit</option></select></div>
+  <div class="rij"><span>Woorden per wedstrijd</span><select id="setN"><option>8</option><option>12</option><option>16</option><option>20</option></select></div>
+  <div class="rij"><span>AVI-niveau (het spel kiest rond dit niveau)</span><select id="setAvi"><option value="S">Start (letters, eerste woordjes)</option><option value="M3">M3</option><option value="E3">E3</option><option value="M4">M4</option><option value="E4">E4</option><option value="M5">M5</option><option value="E5">E5</option></select></div>
+  <div class="rij"><span>Wat mag er komen</span><span><label><input type="checkbox" id="typLetter"> Letters</label> <label><input type="checkbox" id="typWoord" checked> Woorden</label> <label><input type="checkbox" id="typZin"> Zinnen</label> <label><input type="checkbox" id="typVerhaal"> Verhalen</label></span></div>
+  <div class="rij"><span>Gekende letters (voor beginners; leeg = alles)</span><input id="setLetters" placeholder="bijv. m r s i k aa oo" maxlength="120"></div>
+  <p class="mini">Bij gekende letters krijgt het kind alleen letters en woorden die daaruit bestaan; voeg elke week een klank toe. Niveaus zijn ingedeeld naar de opbouw van de AVI-stappen, niet officieel genormeerd.</p>
+  <div class="rij"><span>Punten bijgeven of afnemen</span><input id="setPunten" type="number" placeholder="+50 of -50" style="max-width:120px"><button class="kn grijs" id="setPuntenKnop">Doen</button></div>
+  <h2>Echte beloningen (voor alle spelers)</h2>
+  <div id="ouderBeloningen"></div>
+  <div class="rij"><input id="nbNaam" placeholder="Bijvoorbeeld: half uur gamen" maxlength="40"><input id="nbPrijs" type="number" placeholder="Prijs" style="max-width:90px"><button class="kn grijs" id="nbKnop">Toevoegen</button></div>
+  <h2>Te bevestigen</h2><div id="ouderBevestig" class="lijst"></div>
+  <h2>Seizoen in de winkel</h2>
+  <div class="rij"><span>Verrassingsdoos na de eerste wedstrijd van de dag</span><select id="setDoos"><option value="1">Aan</option><option value="0">Uit</option></select></div>
+  <div class="rij"><span>Seizoen</span><select id="setSeizoen"><option value="">Geen</option><option value="winter">Winter (ski en sneeuw)</option><option value="zomer">Zomer (strand)</option><option value="beker">Bekerseizoen</option></select></div>
+  <div class="rij"><span>Punten per bladzijde (echte boeken)</span><input id="setBlz" type="number" min="1" max="20" style="max-width:90px"></div>
+  <div class="rij"><span>Zinnen tellen dubbel</span><select id="setZin"><option value="1">Ja</option><option value="0">Nee</option></select></div>
+  <h2>Meting</h2><div id="stats"></div>
+  <h2>Woorden die terugkomen</h2><div class="lijst" id="lastig"></div>
+  <h2>Laatste beurten</h2><div id="log" style="max-height:220px;overflow:auto"></div>
+  <div style="text-align:center;margin-top:16px"><button class="kn grijs" id="exportKnop">Gegevens kopiëren</button><button class="kn grijs" id="sluitKnop">Sluiten</button><button class="kn rood" id="resetKnop">Deze speler wissen</button></div>
+</div></div>
+
+<script>
+// Woordenbank: niet officieel AVI-genormeerd. Opgebouwd naar de klassieke leerlijn en ingedeeld
+// in AVI-stappen (S = Start, M3, E3, M4, E4, M5, E5). Vlaamse woordenschat (frigo, goesting, koer, boekentas).
+// type: letter, woord, zin, verhaal. f = kenmerken: let, mkm, twee, clus, lang, open, dub, moei, zin.
+const AVI=['S','M3','E3','M4','E4','M5','E5'];
+const TWEE=/aa|oo|ee|uu|ie|oe|ui|ei|ij|eu|ou|au/;
+const CLUS=/^(st|sch|sp|kr|kn|pl|bl|tr|dr|br|gr|vl|fl|kl|gl|sl|zw|tw|sn|sm|vr|wr|pr|fr|str|spr|schr)/;
+const CLUSE=/(ts|st|rk|lk|rm|rt|nk|ng|lp|mp|nd|nt|rs|rf|ls|cht|lf|lm|rg|rp|lt|kt|ft|ps|ks)$/;
+function woord(t,s,avi,extra){
+  const f=[]; const syl=(s||t).split('-').length;
+  if(syl===1){f.push('mkm');} else f.push('lang');
+  if(TWEE.test(t)) f.push('twee');
+  if(CLUS.test(t)||CLUSE.test(t)||/-[^-]*(str|spr|kr|pl|st)/.test(s||'')) f.push('clus');
+  if(s&&/(^|-)[^-]*[aeiou]-/.test(s)&&!/(^|-)[^-]*(aa|ee|oo|uu|ie|oe|ui|ei|ij|eu|ou|au)-/.test(s)) f.push('open');
+  if(s&&/([bcdfgklmnprst])-\1/.test(s)) f.push('dub');
+  if(/lijk|ig$|ieuw|eeuw|tie$|^be|^ge|^ver|ch|c|x|y|q|th|isch|aire|eau|é|è|ë/.test(t)&&!/^ch|sch/.test(t)) f.push('moei');
+  if(extra) extra.forEach(x=>{if(!f.includes(x))f.push(x);});
+  return {t,s:s||t,type:'woord',avi,f};
+}
+const W=(avi,list)=>list.map(x=>Array.isArray(x)?woord(x[0],x[1],avi,x[2]):woord(x,null,avi));
+const BANK=[
+// ---------- Start: letters en klanken ----------
+...['a','e','i','o','u','m','r','s','k','t','p','l','n','b','d','v','f','g','h','j','w','z','aa','oo','ee','uu','ie','oe','ui','ei','ij','eu','ou','au','sch','ng','nk','ch'].map(l=>({t:l,s:l,type:'letter',avi:'S',f:['let']})),
+// ---------- Start / M3: korte klankzuivere woorden ----------
+...W('S',['ik','aap','bal','vis','kat','net','pet','kip','mus','bus','pen','mes','pot','tak','zak','bos','sok','rok','dak','hek','bek','bok','lip','pit','zon','man','pan','jas','kam','weg','vel','mos','los','rat','tas','bad','bed','kar','ton','nat','wit','pop','mat','vat','wip','kop','top','muk','bel','rem','sap','gat','hut','put','nek','les','mep','dop','kus','vos','bot','lat','dit','dat','wat','hij','zij','wij','ja','nee','oma','opa','mama','papa','juf','kot','fee','zee','mee','thee','koe','doe','zoo','vla','sla','wc']),
+...W('M3',['rood','geel','boom','boot','maan','vuur','zaal','peer','neus','reus','muis','huis','duim','tuin','geit','zeep','boek','hoek','doel','kous','bouw','been','zeef','veer','beer','deur','keus','leeuw','meeuw','buik','ruit','fluit','muur','uur','duur','vaas','kaas','haas','raam','naam','laag','hoog','groot','boos','roos','doos','poes','koek','hoed','voet','goed','moe','koud','oud','goud','fout','zout','hout','touw','blauw','pauw','nieuw','sneeuw','ijs','eis','reis','trein','klein','fijn','wijn','pijn','mijn','zijn','lijn','bij','kijk','lijk','wieg','ziek','riek','diep','lief','tien','zien','fiets','friet','frigo','koer','klas','kaart','goal','stuur','wiel','band','tank','helm','ster','berg','lift','ski','snel','bril','stok','knie','vlag','spel','start','blok','kist','held','knop','plant','trap','klok','sport','punt','schot','schoen','school','schaap','schip','scherp','schat','vrucht','zwart','zwaan','zwem','zwak','twee','drie','vier','vijf','zes','acht','ring','bang','lang','jong','tong','zing','ding','wang','dank','bank','pink','drink','vink','honk','dronk','kracht','lucht','nacht','licht','zacht','recht','vecht','tocht','bocht','dorst','borst','kerst','markt','hark','park','arm','warm','worst','hond','mond','rond','kind','wind','tent','krant','strand','sterk','werk','vork','melk','kalf','half','wolf','golf','elf','zelf','kaars','baard','paard','staart','taart','hart','kort']),
+// ---------- E3: samenstellingen en langere klankzuivere woorden ----------
+...W('E3',[['voetbal','voet-bal'],['boomhut','boom-hut'],['bushalte','bus-hal-te'],['sneeuwbal','sneeuw-bal'],['vuurwerk','vuur-werk'],['doelpunt','doel-punt'],['keeper','kee-per'],['stuurwiel','stuur-wiel'],['skilift','ski-lift'],['bouwsteen','bouw-steen'],['zaklamp','zak-lamp'],['speelplaats','speel-plaats'],['badpak','bad-pak'],['kastdeur','kast-deur'],['rugzak','rug-zak'],['handbal','hand-bal'],['ijsbaan','ijs-baan'],['bergtop','berg-top'],['vrachtwagen','vracht-wa-gen'],['brandweer','brand-weer'],['voetbalveld','voet-bal-veld'],['boekentas','boe-ken-tas'],['pennenzak','pen-nen-zak'],['zwembroek','zwem-broek'],['zwemles','zwem-les'],['turnzak','turn-zak'],['kleuter','kleu-ter'],['meester','mees-ter'],['schoolbus','school-bus'],['speelgoed','speel-goed'],['bouwdoos','bouw-doos'],['racewagen','ra-ce-wa-gen'],['fietspad','fiets-pad'],['fietsbel','fiets-bel'],['zeehond','zee-hond'],['ijsbeer','ijs-beer'],['zeepbel','zeep-bel'],['huisdier','huis-dier'],['tuinhuis','tuin-huis'],['keukendeur','keu-ken-deur'],['boterham','bo-ter-ham'],['chocomelk','cho-co-melk'],['pistolet','pis-to-let'],['confituur','con-fi-tuur'],['smoutebol','smou-te-bol'],['frietkot','friet-kot'],['kermis','ker-mis'],['goesting','goes-ting'],['plezant','ple-zant'],['camion','ca-mion'],['schoon','schoon'],['ambetant','am-be-tant'],['sjotten','sjot-ten'],['kapot','ka-pot'],['seffens','sef-fens'],['drinkbus','drink-bus'],['fruitzak','fruit-zak'],['koekjes','koek-jes'],['appelsap','ap-pel-sap'],['sinaas','si-naas'],['banaan','ba-naan'],['citroen','ci-troen'],['tomaat','to-maat'],['patat','pa-tat'],['wortel','wor-tel'],['spinazie','spi-na-zie'],['ajuin','a-juin'],['schoenen','schoe-nen'],['sokken','sok-ken'],['handschoen','hand-schoen'],['muts','muts'],['sjaal','sjaal'],['winterjas','win-ter-jas'],['regenjas','re-gen-jas'],['laarzen','laar-zen']]),
+// ---------- M4: open lettergreep, dubbele medeklinker, verkleinwoorden ----------
+...W('M4',[['bomen','bo-men'],['spelen','spe-len'],['lopen','lo-pen'],['regen','re-gen'],['auto','au-to'],['motor','mo-tor'],['spiegel','spie-gel'],['tegel','te-gel'],['vogel','vo-gel'],['water','wa-ter'],['jager','ja-ger'],['beker','be-ker'],['schaatsen','schaat-sen'],['muren','mu-ren'],['rapen','ra-pen'],['vuren','vu-ren'],['bakker','bak-ker'],['letter','let-ter'],['kikker','kik-ker'],['mannen','man-nen'],['bussen','bus-sen'],['vissen','vis-sen'],['petten','pet-ten'],['zitten','zit-ten'],['schoppen','schop-pen'],['trappen','trap-pen'],['zwemmen','zwem-men'],['rennen','ren-nen'],['winnen','win-nen'],['bouwen','bou-wen'],['skiën','ski-en'],['ballen','bal-len'],['kaartje','kaar-tje'],['huisje','huis-je'],['boompje','boom-pje'],['balletje','bal-le-tje'],['autootje','au-too-tje'],['hondje','hond-je'],['poesje','poes-je'],['jasje','jas-je'],['zonnetje','zon-ne-tje'],['ventje','vent-je'],['meisje','meis-je'],['jongen','jon-gen'],['broer','broer'],['zusje','zus-je'],['neven','ne-ven'],['nichtje','nicht-je'],['tante','tan-te'],['nonkel','non-kel'],['buren','bu-ren'],['keuken','keu-ken'],['kamer','ka-mer'],['zolder','zol-der'],['kelder','kel-der'],['garage','ga-ra-ge'],['tafel','ta-fel'],['stoelen','stoe-len'],['lampen','lam-pen'],['ramen','ra-men'],['deuren','deu-ren'],['gordijn','gor-dijn'],['zetel','ze-tel'],['televisie','te-le-vi-sie'],['computer','com-pu-ter'],['tablet','ta-blet'],['telefoon','te-le-foon'],['spelletje','spel-le-tje'],['puzzel','puz-zel'],['blokken','blok-ken'],['knikker','knik-ker'],['schommel','schom-mel'],['glijbaan','glij-baan'],['zandbak','zand-bak'],['stoepkrijt','stoep-krijt'],['springtouw','spring-touw'],['voetballer','voet-bal-ler'],['aanvaller','aan-val-ler'],['verdediger','ver-de-di-ger'],['scheidsrechter','scheids-rech-ter'],['supporter','sup-por-ter'],['tribune','tri-bu-ne'],['stadion','sta-di-on'],['wedstrijd','wed-strijd'],['ploegen','ploe-gen'],['trainen','trai-nen'],['trainer','trai-ner'],['sporten','spor-ten'],['zwembad','zwem-bad'],['zwemmer','zwem-mer'],['duiken','dui-ken'],['fietsen','fiet-sen'],['rijden','rij-den'],['remmen','rem-men'],['sturen','stu-ren'],['tanken','tan-ken'],['wassen','was-sen'],['poetsen','poet-sen'],['koken','ko-ken'],['bakken','bak-ken'],['eten','e-ten'],['drinken','drin-ken'],['slapen','sla-pen'],['dromen','dro-men'],['wakker','wak-ker'],['morgen','mor-gen'],['middag','mid-dag'],['avond','a-vond'],['vandaag','van-daag'],['gisteren','gis-te-ren'],['zondag','zon-dag'],['maandag','maan-dag'],['vrijdag','vrij-dag'],['zaterdag','za-ter-dag'],['weekend','week-end'],['vakantie','va-kan-tie'],['zomer','zo-mer'],['winter','win-ter'],['lente','len-te'],['herfst','herfst'],['sneeuwman','sneeuw-man'],['sneeuwpop','sneeuw-pop'],['skipiste','ski-pis-te'],['skischoen','ski-schoen'],['skibril','ski-bril'],['slee','slee'],['bergen','ber-gen'],['dalen','da-len'],['wolken','wol-ken'],['zonnig','zon-nig'],['regenboog','re-gen-boog'],['dieren','die-ren'],['konijn','ko-nijn'],['paarden','paar-den'],['koeien','koei-en'],['varken','var-ken'],['schapen','scha-pen'],['kippen','kip-pen'],['eenden','een-den'],['vogels','vo-gels'],['vlinder','vlin-der'],['spinnen','spin-nen'],['mieren','mie-ren'],['tijger','tij-ger'],['leeuwen','leeu-wen'],['olifant','o-li-fant'],['apen','a-pen'],['slangen','slan-gen'],['haaien','haai-en'],['dolfijn','dol-fijn'],['walvis','wal-vis'],['pinguïn','pin-gu-in'],['dino','di-no'],['draak','draak'],['ridder','rid-der'],['kasteel','kas-teel'],['prinses','prin-ses'],['koning','ko-ning'],['tovenaar','to-ve-naar'],['piraat','pi-raat'],['schatkist','schat-kist'],['robot','ro-bot'],['raket','ra-ket'],['planeet','pla-neet'],['sterren','ster-ren'],['ruimte','ruim-te']]),
+// ---------- E4: niet-klankzuiver (-lijk, -ig, be-/ge-/ver-, -tie, ch, eeuw/ieuw) ----------
+...W('E4',[['gelijk','ge-lijk'],['eerlijk','eer-lijk'],['gevaarlijk','ge-vaar-lijk'],['lelijk','le-lijk'],['vrolijk','vro-lijk'],['moeilijk','moei-lijk'],['makkelijk','mak-ke-lijk'],['heerlijk','heer-lijk'],['vriendelijk','vrien-de-lijk'],['eindelijk','ein-de-lijk'],['grappig','grap-pig'],['aardig','aar-dig'],['handig','han-dig'],['bezig','be-zig'],['jarig','ja-rig'],['dertig','der-tig'],['twintig','twin-tig'],['veertig','veer-tig'],['prachtig','prach-tig'],['machtig','mach-tig'],['rustig','rus-tig'],['stevig','ste-vig'],['gevonden','ge-von-den'],['verloren','ver-lo-ren'],['gewonnen','ge-won-nen'],['bewegen','be-we-gen'],['vertellen','ver-tel-len'],['begin','be-gin'],['beginnen','be-gin-nen'],['gebeuren','ge-beu-ren'],['verhaal','ver-haal'],['verjaardag','ver-jaar-dag'],['geschenk','ge-schenk'],['cadeau','ca-deau'],['politie','po-li-tie'],['station','sta-tion'],['lachen','la-chen'],['kachel','ka-chel'],['kampioen','kam-pi-oen'],['machine','ma-chi-ne'],['chauffeur','chauf-feur'],['chocolade','cho-co-la-de'],['praline','pra-li-ne'],['vanille','va-nil-le'],['douche','dou-che'],['cactus','cac-tus'],['circus','cir-cus'],['clown','clown'],['camera','ca-me-ra'],['taxi','ta-xi'],['examen','e-xa-men'],['yoghurt','yog-hurt'],['pyjama','py-ja-ma'],['baby','ba-by'],['hobby','hob-by'],['nieuws','nieuws'],['sneeuwt','sneeuwt'],['eeuw','eeuw'],['kieuw','kieuw'],['schreeuw','schreeuw'],['geeuw','geeuw'],['theater','the-a-ter'],['thuis','thuis'],['bibliotheek','bi-bli-o-theek'],['fantastisch','fan-tas-tisch'],['elektrisch','e-lek-trisch'],['muziek','mu-ziek'],['gitaar','gi-taar'],['piano','pi-a-no'],['trompet','trom-pet'],['orkest','or-kest'],['concert','con-cert'],['recept','re-cept'],['dokter','dok-ter'],['apotheek','a-po-theek'],['ziekenhuis','zie-ken-huis'],['ambulance','am-bu-lan-ce'],['helikopter','he-li-kop-ter'],['vliegtuig','vlieg-tuig'],['luchthaven','lucht-ha-ven'],['tractor','trac-tor'],['bulldozer','bull-do-zer'],['kraan','kraan'],['bouwwerf','bouw-werf'],['metselaar','met-se-laar'],['elektricien','e-lek-tri-cien'],['ingenieur','in-ge-nieur'],['architect','ar-chi-tect'],['minecraft','mine-craft']]),
+// ---------- M5/E5: langere en lastigere woorden ----------
+...W('M5',[['onmiddellijk','on-mid-del-lijk'],['waarschijnlijk','waar-schijn-lijk'],['belangrijk','be-lang-rijk'],['verschrikkelijk','ver-schrik-ke-lijk'],['ongelooflijk','on-ge-loof-lijk'],['nieuwsgierig','nieuws-gie-rig'],['voorzichtig','voor-zich-tig'],['ontdekken','ont-dek-ken'],['ontsnappen','ont-snap-pen'],['verdwijnen','ver-dwij-nen'],['verschijnen','ver-schij-nen'],['verzamelen','ver-za-me-len'],['herinneren','her-in-ne-ren'],['verkeerslicht','ver-keers-licht'],['zebrapad','ze-bra-pad'],['brandweerwagen','brand-weer-wa-gen'],['ziekenwagen','zie-ken-wa-gen'],['kerstvakantie','kerst-va-kan-tie'],['paasvakantie','paas-va-kan-tie'],['sneeuwklassen','sneeuw-klas-sen'],['zwemdiploma','zwem-di-plo-ma'],['boerderij','boer-de-rij'],['dierentuin','die-ren-tuin'],['pretpark','pret-park'],['achtbaan','acht-baan'],['reuzenrad','reu-zen-rad'],['botsauto','bots-au-to'],['spookhuis','spook-huis'],['schaatsbaan','schaats-baan'],['kampioenschap','kam-pi-oen-schap'],['wereldbeker','we-reld-be-ker'],['penalty','pe-nal-ty'],['corner','cor-ner'],['buitenspel','bui-ten-spel'],['strafschop','straf-schop'],['verlengingen','ver-len-gin-gen'],['toeschouwers','toe-schou-wers'],['ontbijt','ont-bijt'],['middageten','mid-dag-e-ten'],['avondeten','a-vond-e-ten'],['appelmoes','ap-pel-moes'],['aardappelen','aard-ap-pe-len'],['stoofvlees','stoof-vlees'],['spaghetti','spa-ghet-ti'],['pannenkoeken','pan-nen-koe-ken'],['wafels','wa-fels'],['ijsje','ijs-je'],['speculaas','spe-cu-laas'],['sinterklaas','sin-ter-klaas'],['kerstboom','kerst-boom'],['nieuwjaar','nieuw-jaar'],['carnaval','car-na-val'],['verkleedkleren','ver-kleed-kle-ren']]),
+// ---------- zinnen ----------
+...[['M3','Ik zie een bal.'],['M3','De kat zit op de mat.'],['M3','Maxime is in de tuin.'],['M3','De bus is rood.'],['M3','Kijk, een vis!'],['M3','Ik eet een koek.'],['M3','De hond is nat.'],['M3','Papa is thuis.'],['M3','De zon is geel.'],['M3','Het doel is groot.'],['M3','De boot vaart op zee.'],['M3','Ik heb een boek.'],
+ ['E3','Maxime schiet de bal in het doel.'],['E3','De keeper pakt de bal.'],['E3','Op de berg ligt veel sneeuw.'],['E3','De bus stopt bij de school.'],['E3','Mijn rugzak is heel zwaar.'],['E3','De ski staat in de lift.'],['E3','Wie scoort het meest?'],['E3','Kijk, de sneeuw is wit.'],['E3','Ik ga graag naar zee.'],['E3','De juf leest een boek voor.'],['E3','Op de koer spelen we voetbal.'],['E3','In de frigo staat de melk.'],['E3','Mijn boekentas staat bij de deur.'],['E3','Na school eet ik een koek.'],
+ ['M4','De auto rijdt snel over de weg.'],['M4','Ik bouw een huis van steen.'],['M4','De vrachtwagen is rood en geel.'],['M4','Wij winnen de wedstrijd.'],['M4','De kikker springt in de sloot.'],['M4','Het is vandaag mooi weer.'],['M4','De auto staat in de garage.'],['M4','De spelers lopen het veld op.'],['M4','Mijn zusje slaapt in haar bedje.'],['M4','We gaan zwemmen in het zwembad.'],['M4','De trainer fluit en we rennen.'],['M4','Op zondag bakken we pannenkoeken.'],['M4','De vogels zingen in de bomen.'],['M4','Ik heb goesting in een ijsje.'],
+ ['E4','De scheidsrechter fluit voor de rust.'],['E4','De kampioen krijgt een gouden beker.'],['E4','Vandaag is het mijn verjaardag.'],['E4','Het is moeilijk om stil te zitten.'],['E4','De chauffeur van de bus lacht vriendelijk.'],['E4','In de vakantie gaan we skiën in de bergen.'],['E4','Het nieuwe stadion is prachtig.'],['E4','De politie rijdt voorbij met de sirene aan.'],['E4','Eindelijk is het weekend!'],['E4','Wij bouwen een gevaarlijk hoge toren.'],['E4','De supporters zingen heel de wedstrijd.'],
+ ['M5','Waarschijnlijk sneeuwt het morgen op de skipiste.'],['M5','De ambulance rijdt onmiddellijk naar het ziekenhuis.'],['M5','Op de bouwwerf werkt de kraan de hele dag.'],['M5','De toeschouwers juichen na de strafschop.'],['M5','In de bibliotheek mag je niet roepen.']]
+ .map(([avi,t])=>({t,s:t,type:'zin',avi,f:['zin',...(/lijk|ig |ieuw|eeuw|tie|ch|c|x|y/.test(t)?['moei']:[])]})),
+// ---------- verhalen (per zin gelezen) ----------
+{type:'verhaal',avi:'M3',t:'De bal',zinnen:['Maxime heeft een bal.','De bal is rood.','Hij schopt de bal.','De bal rolt weg.','Daar is de bal!']},
+{type:'verhaal',avi:'M3',t:'De kat',zinnen:['De kat zit op het dak.','De zon is warm.','De kat slaapt.','Dan komt een mus.','De kat kijkt op.']},
+{type:'verhaal',avi:'E3',t:'Sneeuw',zinnen:['Het sneeuwt op de berg.','Maxime doet zijn ski aan.','De lift gaat omhoog.','Hij skiet de berg af.','Wat gaat dat snel!']},
+{type:'verhaal',avi:'E3',t:'Op de koer',zinnen:['De bel gaat.','Alle kinderen rennen naar de koer.','Maxime kiest een ploeg.','De bal vliegt in het doel.','Goal, roept de juf.']},
+{type:'verhaal',avi:'M4',t:'De race',zinnen:['De auto van Maxime is blauw.','Hij staat aan de start.','De vlag gaat omlaag.','De motor brult en de auto vertrekt.','Na tien rondjes rijdt hij als eerste over de streep.','Iedereen juicht.']},
+{type:'verhaal',avi:'M4',t:'Het kasteel',zinnen:['Maxime bouwt een kasteel van blokken.','De toren wordt heel hoog.','Zijn zusje wil ook helpen.','Ze legt een blok bovenop.','De toren wiebelt, maar hij blijft staan.','Samen bouwen ze verder.']},
+{type:'verhaal',avi:'E4',t:'De wedstrijd',zinnen:['Vandaag is de belangrijke wedstrijd.','De supporters zingen op de tribune.','De scheidsrechter fluit en het spel begint.','Maxime krijgt de bal en dribbelt voorbij de verdediger.','Hij schiet, en de keeper kan er niet bij.','Eindelijk zijn ze kampioen.']},
+{type:'verhaal',avi:'E4',t:'De bouwwerf',zinnen:['Papa werkt op een grote bouwwerf.','Een kraan tilt de zware stenen omhoog.','De metselaar bouwt een muur.','De elektricien legt de kabels.','Voorzichtig loopt Maxime met zijn helm over de werf.','Later wil hij ook ingenieur worden.']},
+{type:'verhaal',avi:'M5',t:'Het pretpark',zinnen:['In de paasvakantie gaan we naar het pretpark.','De achtbaan gaat ongelooflijk snel.','In het spookhuis is het donker en een beetje eng.','Op het reuzenrad zie je heel het park.','Waarschijnlijk komen we volgend jaar terug.']}
+];
+BANK.forEach((it,i)=>{
+  it.id=i; it.ai=AVI.indexOf(it.avi);
+  const base={S:700,M3:900,E3:1050,M4:1200,E4:1350,M5:1500,E5:1650}[it.avi];
+  it.d=base+(it.f?20*(it.f.length-1):0)+(it.type==='zin'?8*it.t.split(' ').length:0)+(it.type==='verhaal'?40:0);
+  if(it.type==='verhaal'){it.s=it.t;it.f=['zin'];}
+  it.tier=it.type==='letter'?0:it.type==='zin'?7:it.type==='verhaal'?8:(it.f.includes('moei')?6:it.f.includes('open')||it.f.includes('dub')?5:it.f.includes('lang')?4:it.f.includes('clus')?3:it.f.includes('twee')?2:1);
+});
+
+</script>
+<script>
+// ---------- opslag: meerdere spelers ----------
+const KEY='leesliga_v2', OUDKEY='leesliga_v1';
+const FEATS={let:'Letters en klanken',mkm:'Korte woorden',twee:'Tweetekenklanken (oe, ei, ui)',clus:'Medeklinkerclusters (sp, kr, -nt)',lang:'Langere woorden',open:'Open lettergreep (bo-men)',dub:'Dubbele medeklinker (bak-ker)',moei:'Niet-klankzuiver (-lijk, -ig, nieuw)',zin:'Zinnen'};
+const LEVELS=[[0,'Vierde provinciale'],[850,'Derde provinciale'],[950,'Tweede provinciale'],[1050,'Eerste provinciale'],[1150,'Tweede amateur'],[1250,'Eerste amateur'],[1350,'Tweede klasse'],[1450,'Eerste klasse'],[1550,'Europa'],[1650,'Wereld']];
+let G,S;
+function leeg(naam){return {ratings:Object.fromEntries(Object.keys(FEATS).map(k=>[k,1000])),peak:1000,level:0,punten:0,doelenTotaal:0,history:[],retry:[],recent:[],settings:{naam:naam||'Speler',mic:'1',hyph:'fout',n:12,avi:'M3',types:['woord'],letters:''},matches:0,streak:{n:0,last:''},bezit:['shirt_wit','broek_blauw','sok_wit','schoen_zwart','haar_bruin','bal_klassiek'],aan:{shirt:'shirt_wit',broek:'broek_blauw',sok:'sok_wit',schoen:'schoen_zwart',haar:'haar_bruin',bal:'bal_klassiek',extra:[]},boeken:[],gekocht:[]};}
+function leegG(){return {profiles:[leeg('Maxime')],active:0,ouder:{beloningen:[{n:'Een half uur gamen',p:100},{n:'Lego-doosje',p:1500},{n:'Samen naar de match',p:3000}],blz:2,seizoen:'',zin:'1',doos:'1',bevestig:[]}};}
+function laad(){
+  try{
+    const r=localStorage.getItem(KEY);
+    if(r){G=JSON.parse(r);}
+    else{
+      G=leegG();
+      const oud=localStorage.getItem(OUDKEY);
+      if(oud){const o=JSON.parse(oud);G.profiles[0]=Object.assign(leeg(o.settings&&o.settings.naam||'Maxime'),o);}
+    }
+  }catch(e){G=leegG();}
+  G.profiles.forEach((p,i)=>{G.profiles[i]=Object.assign(leeg(),p);if(!p.aan)G.profiles[i].aan=leeg().aan;if(!p.bezit)G.profiles[i].bezit=leeg().bezit;});
+  if(G.active>=G.profiles.length)G.active=0;
+  S=G.profiles[G.active];
+}
+function bewaar(){G.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(G));}catch(e){}planSync();}
+// ---------- opslag op de site (Netlify Blobs via /api/stand) ----------
+const CODEKEY='leesliga_code';
+function gezinscode(){try{return (localStorage.getItem(CODEKEY)||'').trim().toLowerCase();}catch(e){return '';}}
+function zetGezinscode(c){try{localStorage.setItem(CODEKEY,c.trim().toLowerCase());}catch(e){}}
+let syncTimer=null, syncStatus='';
+function planSync(){ if(!gezinscode()) return; clearTimeout(syncTimer); syncTimer=setTimeout(pushStand,1500); }
+async function pushStand(){
+  const c=gezinscode(); if(!c) return;
+  try{const r=await fetch('/api/stand?code='+encodeURIComponent(c),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(G)});syncStatus=r.ok?'Bewaard op de site':'Niet bewaard op de site';}
+  catch(e){syncStatus='Geen verbinding, lokaal bewaard';}
+  const el=document.getElementById('syncStatus'); if(el) el.textContent=syncStatus;
+}
+async function pullStand(){
+  const c=gezinscode(); if(!c) return false;
+  try{
+    const r=await fetch('/api/stand?code='+encodeURIComponent(c)); if(!r.ok) return false;
+    const j=await r.json(); const d=j.data;
+    if(d&&d.profiles&&(!G.updated||(d.updated||0)>G.updated)){G=d;G.profiles.forEach((p,i)=>{G.profiles[i]=Object.assign(leeg(),p);});if(G.active>=G.profiles.length)G.active=0;S=G.profiles[G.active];try{localStorage.setItem(KEY,JSON.stringify(G));}catch(e){}return true;}
+    if(!d) pushStand();
+  }catch(e){}
+  return false;
+}
+laad();
+function vandaag(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function gisteren(){const d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+
+// ---------- rating-engine ----------
+const K=28;
+function verwacht(r,d){return 1/(1+Math.pow(10,(d-r)/400));}
+function gezien(f){return S.history.filter(x=>BANK[x.id]&&BANK[x.id].f.includes(f)).length;}
+function itemRating(it){const g=globaal();return it.f.reduce((a,f)=>a+(gezien(f)>0?S.ratings[f]:Math.max(g,S.ratings[f])),0)/it.f.length;}
+function globaal(){const v=Object.values(S.ratings);return v.reduce((a,b)=>a+b,0)/v.length;}
+function update(it,score){
+  const p=verwacht(itemRating(it),it.d);
+  it.f.forEach(f=>{const k=gezien(f)<8?64:K;S.ratings[f]=Math.round(S.ratings[f]+k*(score-p));});
+  const g=globaal(); if(g>S.peak) S.peak=g;
+}
+function bestaatUit(t,L){
+  const tok=L.toLowerCase().split(/[\s,]+/).filter(Boolean).sort((a,b)=>b.length-a.length); if(!tok.length) return true;
+  let s=t.toLowerCase().replace(/[^a-zë]/g,''); let i=0;
+  while(i<s.length){const m=tok.find(k=>s.startsWith(k,i)); if(!m) return false; i+=m.length;}
+  return true;
+}
+function pool(){
+  const st=S.settings; const types=st.types&&st.types.length?st.types:['woord']; const ai=Math.max(0,AVI.indexOf(st.avi||'M3'));
+  let p=BANK.filter(it=>types.includes(it.type)&&it.ai>=Math.max(0,ai-1)&&it.ai<=ai+1);
+  if(st.letters&&st.letters.trim()) p=p.filter(it=>(it.type!=='letter'&&it.type!=='woord')||bestaatUit(it.t,st.letters));
+  if(!p.length) p=BANK.filter(it=>types.includes(it.type));
+  if(!p.length) p=BANK;
+  return p;
+}
+let verhaalQueue=[];
+function kiesItem(){
+  if(verhaalQueue.length) return verhaalQueue.shift();
+  // eerst: herhalingen die aan de beurt zijn
+  S.retry.forEach(r=>r.due--);
+  const idx=S.retry.findIndex(r=>r.due<=0);
+  if(idx>=0){const r=S.retry.splice(idx,1)[0];const it=BANK[r.id];if(it) return it;}
+  // anders: item waarvan de kans op goed rond 85% ligt
+  const P=pool(); const kand=P.filter(it=>!S.recent.includes(it.id)||P.length<25).map(it=>{
+    const r=itemRating(it); const doel=r-(Math.random()<0.3?120:220); return {it,afst:Math.abs(it.d-doel)+Math.random()*60};
+  }).sort((a,b)=>a.afst-b.afst).slice(0,8);
+  return kand[Math.floor(Math.random()*kand.length)].it;
+}
+function plan(id,later){ if(!S.retry.some(r=>r.id===id)) S.retry.push({id,due:later}); }
+
+// ---------- klankvergelijking ----------
+function fon(s){
+  s=s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+  s=s.replace(/sch/g,'sg').replace(/ch/g,'g').replace(/ij/g,'ei').replace(/au/g,'ou').replace(/ie/g,'i').replace(/c(?=[eiy])/g,'s').replace(/c/g,'k').replace(/q/g,'k').replace(/x/g,'ks').replace(/y/g,'i').replace(/v/g,'f').replace(/z/g,'s').replace(/dt$/,'t').replace(/d$/,'t').replace(/b$/,'p').replace(/w$/,'');
+  return s.replace(/(.)\1+/g,'$1');
+}
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=[...Array(n+1).keys()];for(let i=1;i<=m;i++){let c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
+function beoordeel(it,alts){
+  const doel=fon(it.t); if(!doel) return true;
+  let beste=Infinity;
+  for(const a of alts){
+    const kandidaten=[fon(a)];
+    const w=a.trim().split(/\s+/); if(w.length>1){kandidaten.push(fon(w[w.length-1]));}
+    for(const k of kandidaten){
+      if(it.tier===0){ if(k.includes(doel)||(k.length>0&&doel.startsWith(k))) return true; continue; }
+      beste=Math.min(beste,lev(k,doel)/Math.max(doel.length,1));
+    }
+  }
+  if(it.tier===0) return false;
+  const grens=it.tier===7?0.30:0.26;
+  return beste<=grens;
+}
+
+// ---------- spraak ----------
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,luistert=false,micOk=!!SR;
+function maakRec(){
+  if(!SR) return null;
+  const r=new SR(); r.lang='nl-BE'; r.interimResults=false; r.maxAlternatives=5; r.continuous=false;
+  r.onresult=e=>{const alts=[];for(const res of e.results){for(let i=0;i<res.length;i++)alts.push(res[i].transcript);}verwerkSpraak(alts);};
+  r.onerror=e=>{stopLuister(); if(e.error==='not-allowed'||e.error==='service-not-allowed'){micOk=false;zetHint('Microfoon niet beschikbaar. Papa of mama tikt Goed gelezen.');}};
+  r.onend=()=>stopLuister();
+  return r;
+}
+function startLuister(){
+  if(S.settings.mic!=='1'||!micOk||luistert||huidig==null||fase==='klaar') return;
+  try{rec=maakRec();rec.start();luistert=true;el.mic.classList.add('luistert');startTijd=startTijd||Date.now();}catch(e){luistert=false;}
+}
+function stopLuister(){luistert=false;el.mic.classList.remove('luistert');}
+function spreek(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='nl-BE';u.rate=0.85;const v=speechSynthesis.getVoices().find(v=>/^nl/.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u);}catch(e){}}
+
+// ---------- spel ----------
+const el={woord:document.getElementById('woord'),hint:document.getElementById('hint'),balk:document.getElementById('balk'),mic:document.getElementById('micKnop'),doelen:document.getElementById('doelen'),stadion:document.getElementById('reeksTop'),naam:document.getElementById('naam'),verder:document.getElementById('verderKnop')};
+let huidig=null,pogingen=0,fase='lezen',startTijd=0,beurt=0,doelenMatch=0,uitslag=[],foutIdx=-1,foutBron='',laatsteAlts=[];
+function toonWoord(it,klank){
+  const isZin=it.tier===7; el.woord.className='woord'+(isZin?' zin':'');
+  if(klank&&!isZin){
+    el.woord.innerHTML=it.s.split('-').map((k,i,a)=>'<span class="kg'+(i===foutIdx?' fout':'')+'" data-i="'+i+'">'+k+'</span>'+(i<a.length-1?'<span class="streep">-</span>':'')).join('');
+    el.woord.querySelectorAll('.kg').forEach(sp=>sp.onclick=()=>{foutIdx=+sp.dataset.i;foutBron='ouder';toonWoord(it,true);spreekKlank(it,foutIdx);});
+  } else el.woord.textContent=it.t;
+}
+// zoek de klankgroep waar de herkenning afwijkt van het doelwoord
+function zoekFout(it,alts){
+  if(!it.s.includes('-')||!alts||!alts.length) return -1;
+  const kgs=it.s.split('-').map(fon);
+  let beste=-1,besteScore=-1;
+  for(const a of alts){
+    const f=fon(a); let cur=0,idx=-1,goed=0;
+    for(let i=0;i<kgs.length;i++){const p=f.indexOf(kgs[i],cur); if(p<0){if(idx<0)idx=i;} else {cur=p+kgs[i].length;goed++;}}
+    if(goed>besteScore){besteScore=goed;beste=idx;}
+  }
+  return beste;
+}
+function spreekKlank(it,idx){
+  try{speechSynthesis.cancel();const v=speechSynthesis.getVoices().find(v=>/^nl/.test(v.lang));
+    const zeg=(t,rate)=>{const u=new SpeechSynthesisUtterance(t);u.lang='nl-BE';u.rate=rate;if(v)u.voice=v;speechSynthesis.speak(u);};
+    if(idx>=0&&it.s.includes('-')){const kgs=it.s.split('-');kgs.forEach((k,i)=>zeg(k,i===idx?0.55:0.75));zeg(it.t,0.85);}
+    else zeg(it.t,0.8);
+  }catch(e){}
+}
+function zetHint(t){el.hint.textContent=t;}
+function tekenBalk(){el.balk.innerHTML=uitslag.map(u=>'<i class="'+u+'"></i>').join('')+'<i></i>'.repeat(Math.max(0,S.settings.n-uitslag.length));}
+function levelNaam(){return LEVELS[S.level][1];}
+function toonKop(){el.naam.textContent=S.settings.naam;el.stadion.textContent=levelNaam();el.doelen.textContent=doelenMatch;document.getElementById('puntenTop').textContent=S.punten;}
+function checkLevel(){let l=0;LEVELS.forEach((L,i)=>{if(S.peak>=L[0])l=i;});if(l>S.level){S.level=l;bewaar();document.getElementById('levelNaam').textContent=levelNaam();document.getElementById('levelOv').classList.add('open');confetti();toonKop();return true;}return false;}
+function nieuwWoord(){
+  if(beurt>=S.settings.n){eindeMatch();return;}
+  huidig=kiesItem();
+  if(huidig.type==='verhaal'){const v=huidig;verhaalQueue=v.zinnen.map((z,i)=>({id:v.id,t:z,s:z,type:'zin',avi:v.avi,ai:v.ai,f:['zin'],tier:7,d:v.d,verhaal:v.t,nr:i+1,tot:v.zinnen.length}));huidig=verhaalQueue.shift();}
+  pogingen=0; fase='lezen'; startTijd=0; foutIdx=-1; foutBron=''; laatsteAlts=[];
+  S.recent.push(huidig.id); if(S.recent.length>20) S.recent.shift();
+  toonWoord(huidig,S.settings.hyph==='altijd');
+  zetHint(huidig.verhaal?'Verhaal: '+huidig.verhaal+' ('+huidig.nr+' van '+huidig.tot+')':huidig.tier===0?'Welke klank is dit?':'Lees het hardop.');
+  el.verder.textContent='Verder';
+  if(!startTijd) startTijd=Date.now();
+  setTimeout(startLuister,350);
+}
+function verwerkSpraak(alts){
+  if(!huidig||fase==='klaar') return;
+  laatsteAlts=alts; if(beoordeel(huidig,alts)) goed('mic'); else nogEens('mic');
+}
+function goed(bron){
+  if(!huidig||fase==='klaar') return;
+  stopLuister(); if(rec){try{rec.abort();}catch(e){}}
+  fase='klaar';
+  const ms=Date.now()-startTijd;
+  const score=pogingen===0?1:0.5;
+  update(huidig,score);
+  S.history.push({id:huidig.id,t:huidig.t,ok:pogingen===0?'goed':'tweede',ms,bron,ts:Date.now(),fout:foutIdx>=0?huidig.s.split('-')[foutIdx]:'',foutBron}); if(S.history.length>400) S.history.shift();
+  const mult=(huidig.tier===7&&G.ouder.zin==='1')?2:1;
+  if(pogingen===0){doelenMatch++;S.doelenTotaal++;S.punten+=3*mult;uitslag.push('ok');zetHint('Doelpunt!');}
+  else{S.punten+=1*mult;uitslag.push('half');zetHint('Goed zo, dat was hem.');plan(huidig.id,6);}
+  bewaar(); toonKop(); tekenBalk(); beurt++;
+  const lvl=checkLevel();
+  if(!lvl) setTimeout(nieuwWoord,900);
+}
+function nogEens(bron){
+  if(!huidig||fase==='klaar') return;
+  stopLuister();
+  pogingen++;
+  if(bron==='mic'&&foutIdx<0){const i=zoekFout(huidig,laatsteAlts);if(i>=0){foutIdx=i;foutBron='mic';}}
+  if(pogingen===1){
+    toonWoord(huidig,S.settings.hyph!=='nooit');
+    zetHint(huidig.tier===7?'Lees het nog eens, rustig woord voor woord.':(foutIdx>=0?'Nog eens. Kijk goed naar het gele stuk.':'Nog eens. Lees het woord tot de laatste letter.'));
+    setTimeout(startLuister,500);
+  } else {
+    // twee keer geprobeerd: voorzeggen met nadruk op het lastige stuk, meelezen, verder
+    fase='meelezen';
+    toonWoord(huidig,S.settings.hyph!=='nooit');
+    zetHint(foutIdx>=0?'Luister, het gele stuk is het lastige stuk. Lees mee.':'Luister en lees mee.');
+    spreekKlank(huidig,foutIdx);
+    el.verder.textContent='Ik heb meegelezen';
+  }
+}
+function skip(){
+  if(!huidig) return;
+  if(fase==='lezen'&&pogingen<2){ // kind wil verder: behandelen als tweede poging mislukt
+    pogingen=2; nogEens('skip'); return;
+  }
+  if(fase==='meelezen'){
+    stopLuister(); if(rec){try{rec.abort();}catch(e){}}
+    fase='klaar';
+    update(huidig,0);
+    S.history.push({id:huidig.id,t:huidig.t,ok:'overgeslagen',ms:Date.now()-startTijd,bron:'skip',ts:Date.now(),fout:foutIdx>=0?huidig.s.split('-')[foutIdx]:'',foutBron});
+    plan(huidig.id,4); uitslag.push('skip'); S.punten+=1;
+    bewaar(); tekenBalk(); beurt++; nieuwWoord();
+  }
+}
+function eindeMatch(){
+  stopLuister(); S.matches++;
+  let bonus=0, doos=null; const t=vandaag();
+  if(S.streak.last!==t){ S.streak.n=(S.streak.last===gisteren())?S.streak.n+1:1; S.streak.last=t; bonus=Math.min(10+5*(S.streak.n-1),30); S.punten+=bonus; doos=verrassing(); }
+  bewaar(); toonKop();
+  document.getElementById('eindDoelen').textContent=doelenMatch+(doelenMatch===1?' doelpunt':' doelpunten');
+  document.getElementById('eindTekst').textContent=(bonus?'Eerste wedstrijd van vandaag: '+bonus+' punten extra, dag '+S.streak.n+' op rij. ':'')+'Je hebt nu '+S.punten+' punten en samen al '+S.doelenTotaal+' doelpunten.';
+  if(doos) setTimeout(()=>toonDoos(doos),400);
+  document.getElementById('eindOv').classList.add('open');
+}
+function startMatch(){
+  beurt=0;doelenMatch=0;uitslag=[];toonKop();tekenBalk();
+  document.getElementById('thuisOv').classList.remove('open');document.getElementById('eindOv').classList.remove('open');
+  try{speechSynthesis.getVoices();}catch(e){}
+  nieuwWoord();
+}
+function confetti(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const kl=['#FFC72C','#FF7A1A','#8FD3FF','#F7F7F2'];for(let i=0;i<60;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=kl[i%4];c.style.animationDelay=Math.random()*.8+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),3400);}}
+
+// ---------- knoppen ----------
+document.getElementById('startKnop').onclick=startMatch;
+document.getElementById('opnieuwKnop').onclick=startMatch;
+document.getElementById('levelKnop').onclick=()=>{document.getElementById('levelOv').classList.remove('open');setTimeout(nieuwWoord,200);};
+el.mic.onclick=()=>{if(luistert){stopLuister();try{rec.abort();}catch(e){}}else startLuister();};
+document.getElementById('luisterKnop').onclick=()=>{if(huidig)spreek(huidig.t);};
+el.verder.onclick=skip;
+document.getElementById('goedKnop').onclick=()=>{if(fase==='meelezen'){pogingen=1;fase='lezen';}goed('ouder');};
+document.getElementById('nogKnop').onclick=()=>nogEens('ouder');
+
+
+
+// ---------- catalogus ----------
+// Reeksen: de ladder waarin Maxime speelt. LEVELS (meting) en truitjes volgen dezelfde namen.
+const REEKS=['Vierde provinciale','Derde provinciale','Tweede provinciale','Eerste provinciale','Tweede amateur','Eerste amateur','Tweede klasse','Eerste klasse','Europa','Wereld'];
+// Truitjes: verzonnen clubs, kleuren vrij gekozen. pat: effen, streep (verticaal), hoops (horizontaal), helft, band (diagonaal), kraag = boordkleur.
+const KITS=[
+ // reeks 0-1: provinciaal
+ ['kit_molseheide','FC Molse Heide',0,'#6b4f2a','#2a9d5c','effen','#f4f4f4',20],
+ ['kit_netezonen','De Netezonen',0,'#FFC72C','#132238','hoops','#132238',30],
+ ['kit_kempenboys','Kempen Boys',0,'#f4f4f4','#2a9d5c','streep','#2a9d5c',40],
+ ['kit_zwaluwen','Sporting Zwaluwen',1,'#1d5fd1','#f4f4f4','effen','#f4f4f4',60],
+ ['kit_dijle','Dijle United',1,'#d62828','#f4f4f4','helft','#132238',70],
+ ['kit_veenduivels','De Veenduivels',1,'#1a1a1a','#FF7A1A','streep','#FF7A1A',80],
+ // reeks 2-3: amateur
+ ['kit_paarswit','Paars-Wit Zuidpark',2,'#6a0dad','#f4f4f4','effen','#f4f4f4',120],
+ ['kit_blauwzwart','Blauw-Zwart Zeehaven',2,'#1d5fd1','#1a1a1a','streep','#1a1a1a',140],
+ ['kit_roodwit','Rood-Wit Vurige Stede',2,'#d62828','#f4f4f4','effen','#f4f4f4',150],
+ ['kit_geelblauw','Geel-Blauw Maasland',3,'#FFC72C','#1d5fd1','hoops','#1d5fd1',180],
+ ['kit_groenwit','Groen-Wit Meetjesland',3,'#2a9d5c','#f4f4f4','band','#f4f4f4',200],
+ ['kit_bosuil','De Bosuilen',3,'#d62828','#f4f4f4','streep','#132238',220],
+ // reeks 4-5: klasse
+ ['kit_zebra','De Zebra\'s van Zuid',4,'#f4f4f4','#1a1a1a','streep','#1a1a1a',300],
+ ['kit_kustclub','Rood-Blauw van de Kust',4,'#d62828','#1d5fd1','streep','#FFC72C',320],
+ ['kit_flamingo','Roze Flamingo\'s',4,'#ff7ab8','#1a1a1a','effen','#1a1a1a',350],
+ ['kit_hemelsblauw','Hemelsblauw Rivierstad',5,'#8FD3FF','#f4f4f4','effen','#132238',400],
+ ['kit_oranjeleeuwen','Oranje Leeuwen',5,'#FF7A1A','#1a1a1a','effen','#1a1a1a',420],
+ ['kit_bordeaux','Bordeaux-Blauw Bergstad',5,'#7b1e3a','#8FD3FF','helft','#FFC72C',450],
+ // reeks 6-7: Europa
+ ['kit_wittekoningen','De Witte Koningen',6,'#f4f4f4','#e0b400','effen','#e0b400',600],
+ ['kit_prinsen','Parijse Prinsen',6,'#132238','#d62828','band','#f4f4f4',650],
+ ['kit_roodduivel','Rode Duivels van het Noorden',7,'#d62828','#1a1a1a','effen','#f4f4f4',700],
+ ['kit_blauwgranaat','Blauw-Granaat Havenstad',7,'#1d5fd1','#a0153e','streep','#FFC72C',750],
+ // reeks 8-9: Wereld
+ ['kit_kanaries','De Kanaries',8,'#FFC72C','#2a9d5c','effen','#2a9d5c',1000],
+ ['kit_albiceleste','Hemelsblauw-Wit Zilverland',8,'#8FD3FF','#f4f4f4','streep','#132238',1100],
+ ['kit_oranje','Oranje Boven',9,'#FF7A1A','#f4f4f4','effen','#1a1a1a',1200],
+ ['kit_goud','De Gouden Ploeg',9,'#e0b400','#1a1a1a','band','#1a1a1a',1500],
+].map(([id,n,r,c,c2,pat,kraag,p])=>({id,cat:'shirt',n,p,l:r,c,c2,pat,kraag,reeks:r}));
+const CAT=[
+ {id:'shirt_wit',cat:'shirt',n:'Wit truitje',p:0,l:0,c:'#f4f4f4',c2:'#f4f4f4',pat:'effen',kraag:'#132238'},
+ ...KITS,
+ // broekjes
+ {id:'broek_blauw',cat:'broek',n:'Blauw broekje',p:0,l:0,c:'#1d5fd1'},
+ {id:'broek_wit',cat:'broek',n:'Wit broekje',p:30,l:0,c:'#f4f4f4'},
+ {id:'broek_zwart',cat:'broek',n:'Zwart broekje',p:40,l:1,c:'#1a1a1a'},
+ {id:'broek_rood',cat:'broek',n:'Rood broekje',p:50,l:2,c:'#d62828'},
+ {id:'broek_geel',cat:'broek',n:'Geel broekje',p:60,l:3,c:'#FFC72C'},
+ {id:'broek_groen',cat:'broek',n:'Groen broekje',p:70,l:4,c:'#2a9d5c'},
+ {id:'broek_goud',cat:'broek',n:'Gouden broekje',p:400,l:8,c:'#e0b400'},
+ // sokken (c2 = streep)
+ {id:'sok_wit',cat:'sok',n:'Witte sokken',p:0,l:0,c:'#f4f4f4',c2:'#f4f4f4'},
+ {id:'sok_geel',cat:'sok',n:'Gele sokken',p:15,l:0,c:'#FFC72C',c2:'#FFC72C'},
+ {id:'sok_blauw',cat:'sok',n:'Blauwe sokken',p:20,l:0,c:'#1d5fd1',c2:'#f4f4f4'},
+ {id:'sok_rood',cat:'sok',n:'Rode sokken',p:30,l:1,c:'#d62828',c2:'#f4f4f4'},
+ {id:'sok_zwartwit',cat:'sok',n:'Zwart-witte sokken',p:50,l:2,c:'#1a1a1a',c2:'#f4f4f4'},
+ {id:'sok_regenboog',cat:'sok',n:'Regenboogsokken',p:120,l:4,c:'#d62828',c2:'#2a9d5c'},
+ {id:'sok_goud',cat:'sok',n:'Gouden sokken',p:300,l:8,c:'#e0b400',c2:'#1a1a1a'},
+ // schoenen
+ {id:'schoen_zwart',cat:'schoen',n:'Zwarte schoenen',p:0,l:0,c:'#1a1a1a'},
+ {id:'schoen_rood',cat:'schoen',n:'Rode schoenen',p:50,l:1,c:'#d62828'},
+ {id:'schoen_blauw',cat:'schoen',n:'Blauwe schoenen',p:60,l:2,c:'#1d5fd1'},
+ {id:'schoen_groen',cat:'schoen',n:'Groene schoenen',p:90,l:3,c:'#2a9d5c'},
+ {id:'schoen_oranje',cat:'schoen',n:'Oranje schoenen',p:120,l:4,c:'#FF7A1A'},
+ {id:'schoen_wit',cat:'schoen',n:'Witte schoenen',p:200,l:5,c:'#f4f4f4'},
+ {id:'schoen_roze',cat:'schoen',n:'Roze schoenen',p:250,l:6,c:'#ff7ab8'},
+ {id:'schoen_goud',cat:'schoen',n:'Gouden schoenen',p:400,l:8,c:'#e0b400'},
+ // haar (s = stijl)
+ {id:'haar_bruin',cat:'haar',n:'Kort bruin',p:0,l:0,c:'#5a3a1e',s:'kort'},
+ {id:'haar_blond',cat:'haar',n:'Kort blond',p:25,l:0,c:'#e8c56a',s:'kort'},
+ {id:'haar_stekels',cat:'haar',n:'Stekels',p:40,l:0,c:'#3b2a1a',s:'stekels'},
+ {id:'haar_lang',cat:'haar',n:'Lang haar',p:60,l:1,c:'#5a3a1e',s:'lang'},
+ {id:'haar_staart',cat:'haar',n:'Staartje',p:70,l:1,c:'#e8c56a',s:'staart'},
+ {id:'haar_krullen',cat:'haar',n:'Krullen',p:80,l:2,c:'#3b2a1a',s:'krullen'},
+ {id:'haar_hanekam',cat:'haar',n:'Hanekam',p:120,l:3,c:'#d62828',s:'hanekam'},
+ {id:'haar_kaal',cat:'haar',n:'Kaal',p:50,l:3,c:'#f1c9a5',s:'kaal'},
+ {id:'haar_dreads',cat:'haar',n:'Dreads',p:150,l:4,c:'#1a1a1a',s:'dreads'},
+ {id:'haar_blauw',cat:'haar',n:'Blauwe stekels',p:200,l:5,c:'#1d5fd1',s:'stekels'},
+ {id:'haar_groen',cat:'haar',n:'Groene hanekam',p:300,l:7,c:'#2a9d5c',s:'hanekam'},
+ // ballen
+ {id:'bal_klassiek',cat:'bal',n:'Klassieke bal',p:0,l:0,c:'#ffffff'},
+ {id:'bal_geel',cat:'bal',n:'Gele bal',p:30,l:0,c:'#FFC72C'},
+ {id:'bal_rood',cat:'bal',n:'Rode bal',p:60,l:2,c:'#d62828'},
+ {id:'bal_blauw',cat:'bal',n:'Blauwe bal',p:90,l:3,c:'#1d5fd1'},
+ {id:'bal_vuur',cat:'bal',n:'Vuurbal',p:250,l:5,c:'#FF7A1A'},
+ {id:'bal_goud',cat:'bal',n:'Gouden bal',p:400,l:8,c:'#e0b400'},
+ // extra
+ {id:'extra_pet',cat:'extra',n:'Pet',p:60,l:2,c:'#1d5fd1'},
+ {id:'extra_zweetband',cat:'extra',n:'Zweetband',p:40,l:1,c:'#d62828'},
+ {id:'extra_baard',cat:'extra',n:'Baard',p:80,l:2,c:'#5a3a1e'},
+ {id:'extra_handschoenen',cat:'extra',n:'Keeperhandschoenen',p:150,l:4,c:'#2a9d5c'},
+ {id:'extra_aanvoerder',cat:'extra',n:'Aanvoerdersband',p:200,l:5,c:'#FFC72C'},
+ {id:'extra_beker',cat:'extra',n:'Beker',p:250,l:5,c:'#c0c0c0'},
+ {id:'extra_skihelm',cat:'extra',n:'Skihelm',p:300,l:6,c:'#d62828'},
+ {id:'extra_snowboard',cat:'extra',n:'Snowboard',p:350,l:6,c:'#1d5fd1'},
+ {id:'extra_beker_goud',cat:'extra',n:'Gouden beker',p:500,l:9,c:'#e0b400'},
+ // auto's
+ {id:'auto_klein_rood',cat:'auto',n:'Rode stadswagen',p:150,l:3,c:'#d62828',v:'klein'},
+ {id:'auto_klein_blauw',cat:'auto',n:'Blauwe stadswagen',p:180,l:3,c:'#1d5fd1',v:'klein'},
+ {id:'auto_bus',cat:'auto',n:'Spelersbus',p:250,l:4,c:'#2a9d5c',v:'bus'},
+ {id:'auto_sport_blauw',cat:'auto',n:'Blauwe sportwagen',p:300,l:4,c:'#1d5fd1',v:'sport'},
+ {id:'auto_sport_rood',cat:'auto',n:'Rode sportwagen',p:350,l:5,c:'#d62828',v:'sport'},
+ {id:'auto_race_geel',cat:'auto',n:'Gele racewagen',p:400,l:5,c:'#FFC72C',v:'race'},
+ {id:'auto_pickup',cat:'auto',n:'Pick-up',p:450,l:6,c:'#6b4f2a',v:'pickup'},
+ {id:'auto_zwart',cat:'auto',n:'Zwarte sportwagen',p:500,l:7,c:'#1a1a1a',v:'sport'},
+ {id:'auto_race_groen',cat:'auto',n:'Groene racewagen',p:600,l:8,c:'#2a9d5c',v:'race'},
+ {id:'auto_goud',cat:'auto',n:'Gouden racewagen',p:800,l:9,c:'#e0b400',v:'race'},
+ // stadion (bouwen; volgorde = tekenlaag)
+ {id:'st_hek',cat:'stadion',n:'Hek rond het veld',p:100,l:0},
+ {id:'st_bank',cat:'stadion',n:'Spelersbank',p:150,l:0},
+ {id:'st_tribune_noord',cat:'stadion',n:'Tribune achter het doel',p:300,l:0},
+ {id:'st_vlaggen',cat:'stadion',n:'Vlaggen',p:200,l:1},
+ {id:'st_scorebord',cat:'stadion',n:'Scorebord',p:400,l:1},
+ {id:'st_tribune_west',cat:'stadion',n:'Tribune links',p:600,l:2},
+ {id:'st_tribune_oost',cat:'stadion',n:'Tribune rechts',p:600,l:2},
+ {id:'st_naambord',cat:'stadion',n:'Je naam op de gevel',p:500,l:2},
+ {id:'st_lichtmasten',cat:'stadion',n:'Lichtmasten',p:800,l:3},
+ {id:'st_tribune_zuid',cat:'stadion',n:'Grote tribune',p:1200,l:4},
+ {id:'st_mascotte',cat:'stadion',n:'Mascotte',p:700,l:4},
+ {id:'st_dak',cat:'stadion',n:'Dak op de tribunes',p:2000,l:5},
+ {id:'st_videoscherm',cat:'stadion',n:'Groot videoscherm',p:1500,l:6},
+ {id:'st_vuurwerk',cat:'stadion',n:'Vuurwerk na de match',p:2500,l:7},
+ {id:'st_tweede_ring',cat:'stadion',n:'Tweede ring',p:4000,l:8},
+ {id:'st_gouden_dak',cat:'stadion',n:'Gouden dak',p:5000,l:9},
+ // seizoenen
+ {id:'extra_muts',cat:'extra',n:'Muts',p:60,l:0,z:'winter',c:'#d62828'},
+ {id:'extra_sjaal',cat:'extra',n:'Sjaal',p:60,l:0,z:'winter',c:'#1d5fd1'},
+ {id:'extra_skibril',cat:'extra',n:'Skibril',p:120,l:0,z:'winter',c:'#FF7A1A'},
+ {id:'bal_sneeuw',cat:'bal',n:'Sneeuwbal',p:80,l:0,z:'winter',c:'#ffffff'},
+ {id:'st_sneeuw',cat:'stadion',n:'Sneeuw op het veld',p:200,l:0,z:'winter'},
+ {id:'extra_zonnebril',cat:'extra',n:'Zonnebril',p:60,l:0,z:'zomer',c:'#1a1a1a'},
+ {id:'bal_strand',cat:'bal',n:'Strandbal',p:80,l:0,z:'zomer',c:'#FF7A1A',c2:'#1d5fd1'},
+ {id:'broek_oranje',cat:'broek',n:'Fel oranje broekje',p:60,l:0,z:'zomer',c:'#FF7A1A'},
+ {id:'kit_beker',cat:'shirt',n:'Bekershirt',p:120,l:0,z:'beker',c:'#6a0dad',c2:'#FFC72C',pat:'band',kraag:'#FFC72C'},
+ {id:'extra_medaille',cat:'extra',n:'Medaille',p:150,l:0,z:'beker',c:'#e0b400'},
+];
+const CATNAAM={shirt:'Truitjes',broek:'Broekjes',sok:'Sokken',schoen:'Schoenen',haar:'Haar',bal:'Ballen',extra:'Extra',auto:'Auto\'s',stadion:'Stadion'};
+const byId=id=>CAT.find(c=>c.id===id);
+let svgN=0;
+
+// ---------- tekenen: mannetje ----------
+function figuurSVG(p){
+  const g=k=>byId(p.aan[k])||CAT.find(c=>c.cat===k);
+  const sh=g('shirt'),br=g('broek'),so=g('sok'),sc=g('schoen'),ha=g('haar'),ba=g('bal');
+  const ex=(p.aan.extra||[]).map(byId).filter(Boolean); const heeft=id=>ex.some(e=>e.id===id);
+  const u='c'+(svgN++);
+  const huid='#f1c9a5', lijn='#132238';
+  let s='<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="'+u+'"><path d="M60 76l24-12h32l24 12 14 42-16 6-4-8v46H66v-46l-4 8-16-6z"/></clipPath></defs>';
+  s+='<ellipse cx="100" cy="288" rx="72" ry="8" fill="rgba(0,0,0,.25)"/>';
+  // benen
+  s+='<rect x="72" y="186" width="22" height="48" rx="9" fill="'+huid+'"/><rect x="106" y="186" width="22" height="48" rx="9" fill="'+huid+'"/>';
+  // sokken met streep
+  s+='<rect x="70" y="220" width="26" height="38" rx="7" fill="'+so.c+'"/><rect x="104" y="220" width="26" height="38" rx="7" fill="'+so.c+'"/>';
+  s+='<rect x="70" y="226" width="26" height="5" fill="'+so.c2+'"/><rect x="104" y="226" width="26" height="5" fill="'+so.c2+'"/>';
+  if(so.id==='sok_regenboog') s+='<rect x="70" y="236" width="26" height="5" fill="#FFC72C"/><rect x="104" y="236" width="26" height="5" fill="#FFC72C"/><rect x="70" y="246" width="26" height="5" fill="#1d5fd1"/><rect x="104" y="246" width="26" height="5" fill="#1d5fd1"/>';
+  // schoenen met noppen en veter
+  s+='<path d="M66 258h30v14a6 6 0 0 1-6 6H60a4 4 0 0 1-4-4c0-6 4-12 10-16z" fill="'+sc.c+'"/><path d="M104 258h30c6 4 10 10 10 16a4 4 0 0 1-4 4h-30a6 6 0 0 1-6-6z" fill="'+sc.c+'"/>';
+  s+='<path d="M72 262h16M110 262h16" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M62 278h34M104 278h34" stroke="rgba(0,0,0,.35)" stroke-width="2" stroke-dasharray="3 3"/>';
+  // broekje met naad
+  s+='<path d="M64 150h72v38l-6 12H108l-8-12-8 12H70l-6-12z" fill="'+br.c+'"/><path d="M100 150v36" stroke="rgba(0,0,0,.15)" stroke-width="2"/>';
+  // shirt basis
+  const shirtPath='M60 76l24-12h32l24 12 14 42-16 6-4-8v46H66v-46l-4 8-16-6z';
+  s+='<path d="'+shirtPath+'" fill="'+sh.c+'"/>';
+  const c2=sh.c2||sh.c;
+  if(sh.pat==='streep') s+='<g clip-path="url(#'+u+')">'+[68,84,100,116,132].map(x=>'<rect x="'+(x-4)+'" y="60" width="9" height="110" fill="'+c2+'"/>').join('')+'</g>';
+  if(sh.pat==='hoops') s+='<g clip-path="url(#'+u+')">'+[86,104,122,140].map(y=>'<rect x="40" y="'+y+'" width="120" height="9" fill="'+c2+'"/>').join('')+'</g>';
+  if(sh.pat==='helft') s+='<g clip-path="url(#'+u+')"><rect x="100" y="60" width="70" height="110" fill="'+c2+'"/></g>';
+  if(sh.pat==='band') s+='<g clip-path="url(#'+u+')"><path d="M50 150L130 60h26L74 170z" fill="'+c2+'"/></g>';
+  // mouwboord, kraag, nummer
+  const kr=sh.kraag||lijn;
+  s+='<path d="M60 76l-14 42 16 6" fill="none" stroke="'+kr+'" stroke-width="4"/><path d="M140 76l14 42-16 6" fill="none" stroke="'+kr+'" stroke-width="4"/>';
+  s+='<path d="M84 64q16 14 32 0" fill="none" stroke="'+kr+'" stroke-width="5" stroke-linecap="round"/>';
+  if(heeft('extra_aanvoerder')) s+='<path d="M46 100l14 6-3 10-14-6z" fill="'+byId('extra_aanvoerder').c+'"/>';
+  // armen
+  s+='<rect x="40" y="120" width="19" height="32" rx="9" fill="'+huid+'"/><rect x="141" y="120" width="19" height="32" rx="9" fill="'+huid+'"/>';
+  if(heeft('extra_zweetband')) s+='<rect x="40" y="134" width="19" height="7" fill="'+byId('extra_zweetband').c+'"/><rect x="141" y="134" width="19" height="7" fill="'+byId('extra_zweetband').c+'"/>';
+  if(heeft('extra_handschoenen')) s+='<rect x="36" y="136" width="27" height="24" rx="9" fill="'+byId('extra_handschoenen').c+'"/><rect x="137" y="136" width="27" height="24" rx="9" fill="'+byId('extra_handschoenen').c+'"/>';
+  // hoofd
+  s+='<rect x="92" y="60" width="16" height="14" fill="'+huid+'"/><circle cx="100" cy="44" r="30" fill="'+huid+'"/>';
+  s+='<ellipse cx="70" cy="46" rx="4" ry="6" fill="'+huid+'"/><ellipse cx="130" cy="46" rx="4" ry="6" fill="'+huid+'"/>';
+  s+='<circle cx="89" cy="44" r="4" fill="'+lijn+'"/><circle cx="111" cy="44" r="4" fill="'+lijn+'"/><circle cx="90.5" cy="42.5" r="1.3" fill="#fff"/><circle cx="112.5" cy="42.5" r="1.3" fill="#fff"/>';
+  s+='<path d="M84 34q5-4 10 0M106 34q5-4 10 0" stroke="'+ha.c==='#f1c9a5'?'#5a3a1e':ha.c+'" stroke-width="2.5" fill="none"/>';
+  s+='<path d="M89 58q11 9 22 0" stroke="'+lijn+'" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="82" cy="54" r="4" fill="#f4a3a3" opacity=".5"/><circle cx="118" cy="54" r="4" fill="#f4a3a3" opacity=".5"/>';
+  if(heeft('extra_baard')) s+='<path d="M76 50q4 26 24 26t24-26q-4 14-24 14T76 50z" fill="'+byId('extra_baard').c+'"/>';
+  // haar
+  const hc=ha.c;
+  if(ha.s==='kort') s+='<path d="M70 42q-2-30 30-30t30 30q-8-16-30-14-22-2-30 14z" fill="'+hc+'"/>';
+  else if(ha.s==='stekels') s+='<path d="M70 38l4-20 8 12 5-20 8 12 5-20 8 12 5-20 8 12 4-18 5 20 3-8 2 20Q100 10 70 38z" fill="'+hc+'"/>';
+  else if(ha.s==='krullen') s+=[[74,32,10],[86,20,11],[102,16,11],[118,22,10],[128,36,8],[71,46,7],[130,50,7]].map(([x,y,r])=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+hc+'"/>').join('');
+  else if(ha.s==='lang') s+='<path d="M68 44q-2-32 32-32t32 32v30q0 8-8 8h-4V52q-4-10-20-10t-20 10v30h-4q-8 0-8-8z" fill="'+hc+'"/>';
+  else if(ha.s==='staart') s+='<path d="M70 42q-2-30 30-30t30 30q-8-16-30-14-22-2-30 14z" fill="'+hc+'"/><path d="M126 30q14 6 8 30-4-14-10-20z" fill="'+hc+'"/>';
+  else if(ha.s==='hanekam') s+='<path d="M92 34V8q8-6 16 0v26z" fill="'+hc+'"/><path d="M72 40q4-10 20-8v6q-10 0-20 6zM128 40q-4-10-20-8v6q10 0 20 6z" fill="#5a3a1e"/>';
+  else if(ha.s==='dreads') s+='<path d="M70 42q-2-30 30-30t30 30q-8-14-30-12-22-2-30 12z" fill="'+hc+'"/>'+[[72,40],[80,30],[92,24],[108,24],[120,30],[128,40]].map(([x,y])=>'<path d="M'+x+' '+y+'q-6 20 0 34" stroke="'+hc+'" stroke-width="6" fill="none" stroke-linecap="round"/>').join('');
+  else if(ha.s==='kaal') s+='<ellipse cx="92" cy="22" rx="8" ry="4" fill="#fff" opacity=".35"/>';
+  if(heeft('extra_pet')) s+='<path d="M68 34q0-26 32-26t32 26z" fill="'+byId('extra_pet').c+'"/><rect x="64" y="32" width="72" height="7" rx="3" fill="'+byId('extra_pet').c+'"/><path d="M130 34h24q4 0 4 4t-4 4h-24z" fill="'+byId('extra_pet').c+'"/>';
+  if(heeft('extra_muts')) s+='<path d="M70 36q0-26 30-26t30 26z" fill="'+byId('extra_muts').c+'"/><rect x="66" y="32" width="68" height="10" rx="5" fill="#fff"/><circle cx="100" cy="10" r="7" fill="#fff"/>';
+  if(heeft('extra_skihelm')) s+='<path d="M68 40q0-30 32-30t32 30v6H68z" fill="'+byId('extra_skihelm').c+'"/><rect x="68" y="42" width="64" height="6" fill="#1a1a1a"/>';
+  if(heeft('extra_skibril')) s+='<rect x="76" y="36" width="48" height="16" rx="8" fill="'+byId('extra_skibril').c+'"/><rect x="80" y="39" width="40" height="10" rx="5" fill="#8FD3FF"/>';
+  if(heeft('extra_zonnebril')) s+='<rect x="78" y="38" width="18" height="11" rx="5" fill="#1a1a1a"/><rect x="104" y="38" width="18" height="11" rx="5" fill="#1a1a1a"/><path d="M96 43h8" stroke="#1a1a1a" stroke-width="2"/>';
+  if(heeft('extra_sjaal')) s+='<rect x="72" y="70" width="56" height="14" rx="7" fill="'+byId('extra_sjaal').c+'"/><rect x="112" y="78" width="14" height="34" rx="6" fill="'+byId('extra_sjaal').c+'"/>';
+  if(heeft('extra_medaille')) s+='<path d="M100 72v22" stroke="#d62828" stroke-width="4"/><circle cx="100" cy="98" r="9" fill="'+byId('extra_medaille').c+'"/>';
+  if(heeft('extra_beker')||heeft('extra_beker_goud')){const c=heeft('extra_beker_goud')?byId('extra_beker_goud').c:byId('extra_beker').c;s+='<g transform="translate(150,100)"><path d="M0 0h24l-3 22q-9 8-18 0z" fill="'+c+'"/><rect x="6" y="24" width="12" height="8" fill="'+c+'"/><rect x="2" y="32" width="20" height="5" rx="2" fill="'+c+'"/></g>';}
+  if(heeft('extra_snowboard')) s+='<rect x="22" y="150" width="14" height="120" rx="7" fill="'+byId('extra_snowboard').c+'" transform="rotate(-8 29 210)"/>';
+  // bal
+  s+='<circle cx="150" cy="264" r="16" fill="'+ba.c+'" stroke="'+lijn+'" stroke-width="1.5"/>';
+  if(ba.id==='bal_klassiek') s+='<path d="M150 254l7 5-2.7 8h-8.6L143 259z" fill="'+lijn+'"/>';
+  else if(ba.id==='bal_strand') s+='<path d="M150 248a16 16 0 0 1 0 32z" fill="'+ba.c2+'"/><path d="M150 248v32" stroke="#fff" stroke-width="2"/>';
+  else if(ba.id==='bal_sneeuw') s+='<circle cx="145" cy="260" r="3" fill="#dde"/><circle cx="155" cy="268" r="2" fill="#dde"/>';
+  else if(ba.id==='bal_vuur') s+='<path d="M136 256q6-14 14-12-4 8 2 12 4-6 10 0-8 4-6 12" fill="#FFC72C"/>';
+  else s+='<path d="M150 254l7 5-2.7 8h-8.6L143 259z" fill="rgba(0,0,0,.25)"/>';
+  return s+'</svg>';
+}
+function autoSVG(a){
+  const c=a.c,v=a.v; let s='<svg viewBox="0 0 160 80" xmlns="http://www.w3.org/2000/svg">';
+  if(v==='klein') s+='<path d="M20 58V40q0-8 8-8h12l12-16h36l14 16h20q8 0 8 8v18z" fill="'+c+'"/><path d="M46 32l10-12h30l10 12z" fill="#8FD3FF"/>';
+  else if(v==='sport') s+='<path d="M10 58V46q0-6 6-8l20-4 16-14h44l24 14 22 4q6 2 6 8v12z" fill="'+c+'"/><path d="M54 34l12-10h30l16 10z" fill="#8FD3FF"/>';
+  else if(v==='bus') s+='<rect x="10" y="12" width="140" height="48" rx="8" fill="'+c+'"/>'+[20,50,80,110].map(x=>'<rect x="'+x+'" y="20" width="24" height="16" rx="3" fill="#8FD3FF"/>').join('')+'<rect x="10" y="44" width="140" height="6" fill="#f4f4f4"/>';
+  else if(v==='pickup') s+='<path d="M10 58V30h60l14-16h30v44z" fill="'+c+'"/><rect x="10" y="30" width="60" height="14" fill="rgba(0,0,0,.15)"/><path d="M88 30l10-12h20v12z" fill="#8FD3FF"/>';
+  else s+='<path d="M6 58V48l24-6 20-18h44l22 14 30 4q8 2 8 8v8z" fill="'+c+'"/><path d="M52 40l14-12h28l14 12z" fill="#8FD3FF"/><rect x="120" y="22" width="34" height="6" rx="3" fill="#1a1a1a"/><rect x="134" y="28" width="6" height="14" fill="#1a1a1a"/>';
+  s+='<circle cx="46" cy="60" r="12" fill="#1a1a1a"/><circle cx="46" cy="60" r="5" fill="#aaa"/><circle cx="118" cy="60" r="12" fill="#1a1a1a"/><circle cx="118" cy="60" r="5" fill="#aaa"/>';
+  if(a.id==='auto_goud') s+='<path d="M20 52h120" stroke="#fff3b0" stroke-width="2" opacity=".7"/>';
+  return s+'</svg>';
+}
+// ---------- tekenen: stadion ----------
+function stadionSVG(p,items){
+  const h=id=>items.includes(id); const naam=p.settings.naam;
+  let s='<svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">';
+  // lucht en horizon
+  s+='<rect width="800" height="420" fill="#0E2140"/>';
+  if(h('st_vuurwerk')) s+=[[120,60,'#FFC72C'],[680,50,'#FF7A1A'],[400,40,'#8FD3FF'],[250,90,'#ff7ab8']].map(([x,y,c])=>[0,45,90,135,180,225,270,315].map(a=>'<line x1="'+x+'" y1="'+y+'" x2="'+(x+30*Math.cos(a*Math.PI/180))+'" y2="'+(y+30*Math.sin(a*Math.PI/180))+'" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>').join('')+'<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+c+'"/>').join('');
+  // grote tribune achteraan (zuid = tegenover kijker)
+  const tribune=(x,y,w,hgt,rijen,kleur)=>{let t='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+hgt+'" rx="6" fill="'+kleur+'"/>';for(let i=0;i<rijen;i++){t+='<rect x="'+(x+6)+'" y="'+(y+8+i*(hgt-16)/rijen)+'" width="'+(w-12)+'" height="'+((hgt-16)/rijen-4)+'" rx="2" fill="rgba(255,255,255,.12)"/>';}return t;};
+  if(h('st_tweede_ring')) s+=tribune(120,60,560,60,3,'#2b3f66');
+  if(h('st_tribune_zuid')) s+=tribune(150,110,500,70,4,'#3a4f7a'); else s+='<rect x="150" y="150" width="500" height="30" rx="6" fill="#26385c"/>';
+  if(h('st_dak')||h('st_gouden_dak')){const dk=h('st_gouden_dak')?'#e0b400':'#c7ced9';s+='<path d="M130 112l270-40 270 40v12H130z" fill="'+dk+'"/><rect x="130" y="112" width="8" height="70" fill="'+dk+'"/><rect x="662" y="112" width="8" height="70" fill="'+dk+'"/>';}
+  if(h('st_scorebord')||h('st_videoscherm')){const w=h('st_videoscherm')?200:120,x=400-w/2;s+='<rect x="'+x+'" y="'+(h('st_videoscherm')?40:70)+'" width="'+w+'" height="'+(h('st_videoscherm')?60:36)+'" rx="6" fill="#1a1a1a" stroke="#555" stroke-width="3"/><text x="400" y="'+(h('st_videoscherm')?78:94)+'" text-anchor="middle" font-family="Fredoka,Arial" font-weight="700" font-size="'+(h('st_videoscherm')?30:20)+'" fill="#FFC72C">'+p.doelenTotaal+' - 0</text>';}
+  if(h('st_lichtmasten')) s+=[90,710].map(x=>'<rect x="'+(x-4)+'" y="40" width="8" height="160" fill="#8a94a6"/><rect x="'+(x-30)+'" y="30" width="60" height="22" rx="4" fill="#dfe6f2"/><path d="M'+(x-30)+' 52L'+(x-90)+' 220H'+(x+90)+'L'+(x+30)+' 52z" fill="rgba(255,255,200,.10)"/>').join('');
+  // zijtribunes
+  if(h('st_tribune_west')) s+=tribune(30,150,110,150,5,'#3a4f7a');
+  if(h('st_tribune_oost')) s+=tribune(660,150,110,150,5,'#3a4f7a');
+  if(h('st_vlaggen')) s+=[60,200,600,740].map((x,i)=>'<rect x="'+x+'" y="120" width="3" height="40" fill="#ddd"/><path d="M'+(x+3)+' 120h26l-6 8 6 8h-26z" fill="'+['#d62828','#FFC72C','#1d5fd1','#2a9d5c'][i]+'"/>').join('');
+  // veld
+  const gras=h('st_sneeuw')?'#e9f1f7':'#1F8A4C', gras2=h('st_sneeuw')?'#dfe8f0':'#237F47';
+  s+='<rect x="150" y="180" width="500" height="200" fill="'+gras+'"/>'+[0,1,2,3,4].map(i=>'<rect x="'+(150+i*100)+'" y="180" width="50" height="200" fill="'+gras2+'"/>').join('');
+  s+='<rect x="160" y="190" width="480" height="180" fill="none" stroke="#fff" stroke-width="3"/><line x1="400" y1="190" x2="400" y2="370" stroke="#fff" stroke-width="3"/><circle cx="400" cy="280" r="35" fill="none" stroke="#fff" stroke-width="3"/>';
+  s+='<rect x="160" y="240" width="60" height="80" fill="none" stroke="#fff" stroke-width="3"/><rect x="580" y="240" width="60" height="80" fill="none" stroke="#fff" stroke-width="3"/>';
+  // doelen
+  s+='<rect x="140" y="255" width="20" height="50" fill="none" stroke="#fff" stroke-width="4"/><rect x="640" y="255" width="20" height="50" fill="none" stroke="#fff" stroke-width="4"/>';
+  if(h('st_hek')) s+='<rect x="150" y="178" width="500" height="4" fill="#c7ced9"/><rect x="146" y="178" width="4" height="204" fill="#c7ced9"/><rect x="650" y="178" width="4" height="204" fill="#c7ced9"/>';
+  if(h('st_tribune_noord')) s+='<rect x="150" y="386" width="500" height="28" rx="6" fill="#3a4f7a"/><rect x="156" y="392" width="488" height="6" rx="2" fill="rgba(255,255,255,.12)"/><rect x="156" y="402" width="488" height="6" rx="2" fill="rgba(255,255,255,.12)"/>';
+  if(h('st_bank')) s+='<rect x="30" y="330" width="100" height="26" rx="6" fill="#c7ced9"/><rect x="36" y="318" width="88" height="14" rx="4" fill="#8FD3FF" opacity=".7"/>';
+  if(h('st_mascotte')) s+='<g transform="translate(700,330)"><circle cx="0" cy="-30" r="16" fill="#FFC72C"/><rect x="-14" y="-16" width="28" height="36" rx="10" fill="#FF7A1A"/><circle cx="-6" cy="-32" r="3" fill="#132238"/><circle cx="6" cy="-32" r="3" fill="#132238"/><path d="M-6-24q6 5 12 0" stroke="#132238" stroke-width="2" fill="none"/><path d="M-10-46l-6-12 12 6M10-46l6-12-12 6" fill="#FFC72C"/></g>';
+  if(h('st_naambord')) s+='<rect x="250" y="8" width="300" height="34" rx="8" fill="#FFC72C"/><text x="400" y="32" text-anchor="middle" font-family="Fredoka,Arial" font-weight="700" font-size="22" fill="#132238">Stadion '+naam+'</text>';
+  return s+'</svg>';
+}
+function itemSVG(it){
+  if(it.cat==='auto') return autoSVG(it);
+  if(it.cat==='stadion'){return '<svg viewBox="0 0 160 84" xmlns="http://www.w3.org/2000/svg"><foreignObject width="0" height="0"/></svg>'.replace('<foreignObject width="0" height="0"/>','')
+    .replace('</svg>','<g transform="scale(.2) translate(0,0)">'+stadionSVG({settings:{naam:'Stadion'},doelenTotaal:0},[it.id]).replace(/<svg[^>]*>/,'').replace('</svg>','')+'</g></svg>');}
+  const t={aan:Object.assign({},leeg().aan)}; t.aan.extra=[];
+  if(it.cat==='extra') t.aan.extra=[it.id]; else t.aan[it.cat]=it.id;
+  if(it.cat==='shirt'){t.aan.broek='broek_wit';}
+  const vb={shirt:'36 56 128 128',haar:'56 -4 88 88',extra:'30 -4 140 140',sok:'56 210 88 88',schoen:'50 240 100 50',broek:'56 140 88 70',bal:'126 240 50 50'}[it.cat];
+  const svg=figuurSVG(t);
+  return vb?svg.replace('viewBox="0 0 200 300"','viewBox="'+vb+'"'):svg;
+}
+// ---------- kleedkamer, winkel, stadion, garage, doos, boeken, beloningen ----------
+function $(id){return document.getElementById(id);}
+function open(id){ $(id).classList.add('open'); }
+function sluit(id){ $(id).classList.remove('open'); }
+function stadionItems(){return S.bezit.filter(id=>byId(id)&&byId(id).cat==='stadion');}
+function tekenThuis(){
+  $('spelers').innerHTML=G.profiles.map((p,i)=>'<button class="'+(i===G.active?'actief':'')+'" data-i="'+i+'">'+p.settings.naam+'</button>').join('');
+  $('spelers').querySelectorAll('button').forEach(b=>b.onclick=()=>{wisselSpeler(+b.dataset.i);});
+  $('stadion').innerHTML=stadionSVG(S,stadionItems());
+  $('figuur').innerHTML=figuurSVG(S);
+  $('streakN').textContent=S.streak.n; $('puntenThuis').textContent=S.punten; $('doelenThuis').textContent=S.doelenTotaal;
+  const autos=S.bezit.filter(id=>byId(id)&&byId(id).cat==='auto').length;
+  $('garageSub').textContent=autos?autos+(autos===1?' auto':' auto\'s'):'Nog leeg';
+  const nieuw=CAT.filter(it=>koopbaar(it)&&!S.bezit.includes(it.id)&&it.p<=S.punten&&it.cat!=='stadion'&&it.cat!=='auto').length;
+  $('winkelSub').textContent=nieuw?nieuw+' dingen die je nu kunt kopen':'Truitjes, haar, schoenen';
+  const bouw=CAT.filter(it=>it.cat==='stadion'&&koopbaar(it)&&!S.bezit.includes(it.id)); const volgende=bouw.sort((a,b)=>a.p-b.p)[0];
+  $('bouwSub').textContent=volgende?'Volgende: '+volgende.n.toLowerCase()+' ('+volgende.p+')':'Alles gebouwd';
+  const b=G.ouder.beloningen[0]; $('beloningSub').textContent=b?b.n+': '+b.p+' punten':'Papa of mama vult dit in';
+  $('stadionThuis').textContent='Je speelt in '+levelNaam().toLowerCase()+'. Elk goed woord is een doelpunt en 3 punten.';
+  toonKop();
+}
+function wisselSpeler(i){stopLuister();G.active=i;S=G.profiles[i];bewaar();tekenThuis();}
+function koopbaar(it){ if(it.z) return it.z===G.ouder.seizoen; return S.level>=it.l; }
+// winkel met tabbladen
+let tab='shirt';
+const TABS=[['shirt','Truitjes'],['look','Look'],['stadion','Stadion'],['auto','Garage'],['seizoen','Seizoen']];
+function tekenWinkel(){
+  $('winkelPunten').textContent='Je hebt '+S.punten+' punten.';
+  $('winkelTabs').innerHTML=TABS.filter(([k])=>k!=='seizoen'||G.ouder.seizoen).map(([k,n])=>'<button class="'+(k===tab?'actief':'')+'" data-t="'+k+'">'+n+'</button>').join('');
+  $('winkelTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;tekenWinkel();});
+  let html='';
+  const perReeks=(filter)=>{LEVELS.forEach((L,i)=>{const its=CAT.filter(it=>!it.z&&it.l===i&&filter(it));if(!its.length)return;html+=rijHTML(L[1],its,S.level>=i,S.level>=i?'':'Opent in '+L[1].toLowerCase());});};
+  if(tab==='shirt') perReeks(it=>it.cat==='shirt');
+  else if(tab==='look'){ ['haar','schoen','broek','sok','bal','extra'].forEach(c=>{const its=CAT.filter(it=>!it.z&&it.cat===c);html+=rijHTML(CATNAAM[c],its,true,'');}); }
+  else if(tab==='stadion'){ html+='<div class="stadionbeeld" style="margin-bottom:8px">'+stadionSVG(S,stadionItems())+'</div>'; perReeks(it=>it.cat==='stadion'); }
+  else if(tab==='auto'){ const autos=S.bezit.map(byId).filter(a=>a&&a.cat==='auto'); html+='<div class="garage">'+(autos.length?autos.map(autoSVG).join(''):'<div class="leeg">Nog geen auto. De eerste staat klaar in eerste provinciale.</div>')+'</div>'; perReeks(it=>it.cat==='auto'); }
+  else if(tab==='seizoen'){ const zs=CAT.filter(it=>it.z===G.ouder.seizoen); html+=rijHTML({winter:'Winterseizoen',zomer:'Zomerseizoen',beker:'Bekerseizoen'}[G.ouder.seizoen],zs,true,'Alleen nu te koop'); }
+  $('winkelInhoud').innerHTML=html; koppelItems('winkelInhoud');
+}
+function rijHTML(titel,its,openRij,sub){
+  return '<div class="winkelrij"><h3>'+titel+'<small>'+sub+'</small></h3><div class="items">'+its.map(it=>{
+    const bezit=S.bezit.includes(it.id); const openDit=openRij&&koopbaar(it);
+    const aan=it.cat==='extra'?(S.aan.extra||[]).includes(it.id):(it.cat==='auto'||it.cat==='stadion')?bezit:S.aan[it.cat]===it.id;
+    const cls='item'+(it.cat==='stadion'?' stadionitem':'')+(bezit?' bezit':'')+(aan?' aan':'')+(!openDit?' dicht':'')+(!bezit&&openDit&&it.p>S.punten?' teduur':'');
+    const onder=bezit?(it.cat==='stadion'?'Gebouwd':it.cat==='auto'?'In de garage':aan?'Aan':'Aandoen'):(openDit?it.p+' punten':'Opent in '+LEVELS[it.l][1].toLowerCase());
+    return '<button class="'+cls+'" data-id="'+it.id+'" '+(!openDit?'disabled':'')+'>'+itemSVG(it)+'<b>'+it.n+'</b><small>'+onder+'</small></button>';}).join('')+'</div></div>';
+}
+function koppelItems(cont){
+  $(cont).querySelectorAll('.item').forEach(b=>b.onclick=()=>{
+    const it=byId(b.dataset.id); if(!it) return;
+    if(!S.bezit.includes(it.id)){
+      if(it.p>S.punten){ $('winkelPunten').textContent='Nog '+(it.p-S.punten)+' punten sparen voor '+it.n.toLowerCase()+'.'; return; }
+      S.punten-=it.p; S.bezit.push(it.id); S.gekocht.push({id:it.id,ts:Date.now()});
+      if(it.cat==='stadion') confetti();
+    }
+    if(it.cat==='extra'){const e=S.aan.extra||[];const i=e.indexOf(it.id);if(i>=0)e.splice(i,1);else e.push(it.id);S.aan.extra=e;}
+    else if(it.cat!=='auto'&&it.cat!=='stadion'){S.aan[it.cat]=it.id;}
+    bewaar(); tekenWinkel(); toonKop();
+  });
+}
+// verrassingsdoos: één per dag, na de eerste wedstrijd, uit de open rijen
+function verrassing(){
+  if(G.ouder.doos==='0') return null;
+  const kand=CAT.filter(it=>koopbaar(it)&&!S.bezit.includes(it.id)&&it.cat!=='stadion'&&it.cat!=='auto'&&it.p<=300);
+  if(!kand.length){S.punten+=25;return {n:'25 punten',svg:''};}
+  const it=kand[Math.floor(Math.random()*kand.length)];
+  S.bezit.push(it.id); S.gekocht.push({id:it.id,ts:Date.now(),doos:true});
+  if(it.cat==='extra'){(S.aan.extra=S.aan.extra||[]).push(it.id);} else S.aan[it.cat]=it.id;
+  return {n:it.n,svg:itemSVG(it)};
+}
+function toonDoos(d){
+  $('doosInhoud').innerHTML='<div class="doos">'+(d.svg||'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FFC72C"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#7a5a00">+25</text></svg>')+'</div>';
+  $('doosTekst').textContent='In de doos zat: '+d.n+'. Al aangedaan.';
+  open('doosOv'); confetti();
+}
+function tekenBoeken(){ $('boekLijst').innerHTML=S.boeken.length?S.boeken.slice().reverse().slice(0,20).map(b=>b.t+': '+b.blz+' bladzijden, '+b.pt+' punten').join('<br>'):'Nog geen boeken.'; }
+function tekenBeloningen(){
+  $('beloningPunten').textContent='Je hebt '+S.punten+' punten.';
+  $('beloningInhoud').innerHTML=G.ouder.beloningen.length?'<div class="items">'+G.ouder.beloningen.map((b,i)=>{const kan=S.punten>=b.p;return '<button class="item'+(kan?'':' teduur')+'" data-i="'+i+'"><b>'+b.n+'</b><small>'+b.p+' punten'+(kan?'':', nog '+(b.p-S.punten)+' sparen')+'</small></button>';}).join('')+'</div>':'<p>Papa of mama heeft nog niets ingevuld.</p>';
+  $('beloningInhoud').querySelectorAll('.item').forEach(btn=>btn.onclick=()=>{
+    const b=G.ouder.beloningen[+btn.dataset.i]; if(S.punten<b.p){$('beloningPunten').textContent='Nog '+(b.p-S.punten)+' punten sparen.';return;}
+    if(!confirm(b.n+' kopen voor '+b.p+' punten? Papa of mama moet het nog bevestigen.')) return;
+    S.punten-=b.p; G.ouder.bevestig.push({speler:G.active,n:b.n,p:b.p,ts:Date.now()}); bewaar(); tekenBeloningen(); toonKop();
+    $('beloningPunten').textContent='Gekocht! Vraag het aan papa of mama.';
+  });
+}
+$('thuisKnop').onclick=()=>{stopLuister();tekenThuis();open('thuisOv');};
+$('winkelKnop').onclick=()=>{tab='shirt';tekenWinkel();open('winkelOv');};
+$('bouwKnop').onclick=()=>{tab='stadion';tekenWinkel();open('winkelOv');};
+$('garageKnop').onclick=()=>{tab='auto';tekenWinkel();open('winkelOv');};
+$('winkelSluit').onclick=()=>{sluit('winkelOv');tekenThuis();};
+$('boekenKnop').onclick=()=>{tekenBoeken();open('boekenOv');}; $('boekenSluit').onclick=()=>{sluit('boekenOv');tekenThuis();};
+$('beloningKnop').onclick=()=>{tekenBeloningen();open('beloningOv');}; $('beloningSluit').onclick=()=>{sluit('beloningOv');tekenThuis();};
+$('boekKnop').onclick=()=>{const t=$('boekTitel').value.trim(),blz=+$('boekBlz').value;if(!t||!blz)return;const pt=blz*(+G.ouder.blz||2);S.boeken.push({t,blz,pt,ts:Date.now()});S.punten+=pt;bewaar();$('boekTitel').value='';tekenBoeken();toonKop();};
+$('naarThuisKnop').onclick=()=>{sluit('eindOv');tekenThuis();open('thuisOv');};
+$('doosKnop').onclick=()=>{sluit('doosOv');};
+
+// ---------- ouderpaneel ----------
+const ov=$('ouderOv');
+$('ouderKnop').onclick=$('ouderKnop2').onclick=()=>{stopLuister();vulOuder();ov.classList.add('open');};
+$('sluitKnop').onclick=()=>{leesInstellingen();ov.classList.remove('open');tekenThuis();};
+$('resetKnop').onclick=()=>{if(confirm('Speler '+S.settings.naam+' wissen, ook de meting, de punten en de spullen?')){G.profiles.splice(G.active,1);if(!G.profiles.length)G.profiles.push(leeg('Speler'));G.active=0;S=G.profiles[0];bewaar();location.reload();}};
+$('exportKnop').onclick=()=>{try{navigator.clipboard.writeText(JSON.stringify(G,null,1));alert('Gekopieerd.');}catch(e){prompt('Kopieer dit:',JSON.stringify(G));}};
+$('nieuwSpelerKnop').onclick=()=>{const n=$('nieuwSpeler').value.trim();if(!n)return;G.profiles.push(leeg(n));bewaar();$('nieuwSpeler').value='';vulOuder();};
+$('nbKnop').onclick=()=>{const n=$('nbNaam').value.trim(),p=+$('nbPrijs').value;if(!n||!p)return;G.ouder.beloningen.push({n,p});bewaar();$('nbNaam').value='';$('nbPrijs').value='';vulOuder();};
+$('setPuntenKnop').onclick=()=>{const v=+$('setPunten').value;if(!v)return;S.punten=Math.max(0,S.punten+v);$('setPunten').value='';bewaar();vulOuder();toonKop();};
+function leesInstellingen(){
+  const nc=$('setCode').value.trim().toLowerCase(); if(nc!==gezinscode()){zetGezinscode(nc); if(nc){pullStand().then(()=>{tekenThuis();pushStand();});}}
+  S.settings.naam=$('setNaam').value.trim()||S.settings.naam; S.settings.mic=$('setMic').value; S.settings.hyph=$('setHyph').value; S.settings.n=+$('setN').value;
+  G.ouder.seizoen=$('setSeizoen').value; G.ouder.blz=+$('setBlz').value||2; G.ouder.zin=$('setZin').value; G.ouder.doos=$('setDoos').value;
+  const avi=$('setAvi').value; const types=[['typLetter','letter'],['typWoord','woord'],['typZin','zin'],['typVerhaal','verhaal']].filter(([i])=>$(i).checked).map(([,t])=>t);
+  S.settings.types=types.length?types:['woord']; S.settings.letters=$('setLetters').value.trim();
+  if(avi!==S.settings.avi){S.settings.avi=avi;const base={S:750,M3:950,E3:1100,M4:1250,E4:1400,M5:1550,E5:1700}[avi];Object.keys(S.ratings).forEach(k=>S.ratings[k]=base);S.peak=Math.max(S.peak,base);S.recent=[];let l=0;LEVELS.forEach((L,i)=>{if(S.peak>=L[0])l=i;});if(l>S.level)S.level=l;}
+  bewaar();
+}
+function vulOuder(){
+  $('ouderNaam').textContent=S.settings.naam;
+  $('ouderSpelers').innerHTML=G.profiles.map((p,i)=>'<div class="rij"><span>'+p.settings.naam+' ('+p.punten+' punten, '+LEVELS[p.level][1].toLowerCase()+')</span>'+(i===G.active?'<span class="mini">Actief</span>':'<button class="kn grijs" data-i="'+i+'">Kies</button>')+'</div>').join('');
+  $('ouderSpelers').querySelectorAll('button').forEach(b=>b.onclick=()=>{wisselSpeler(+b.dataset.i);vulOuder();});
+  $('setCode').value=gezinscode(); $('syncStatus').textContent=gezinscode()?(syncStatus||'Code ingesteld'):'Nog geen code: het spel wordt alleen op dit toestel bewaard.';
+  $('setAvi').value=S.settings.avi||'M3';const ty=S.settings.types||['woord'];$('typLetter').checked=ty.includes('letter');$('typWoord').checked=ty.includes('woord');$('typZin').checked=ty.includes('zin');$('typVerhaal').checked=ty.includes('verhaal');$('setLetters').value=S.settings.letters||'';
+  $('setNaam').value=S.settings.naam;$('setMic').value=S.settings.mic;$('setHyph').value=S.settings.hyph;$('setN').value=S.settings.n;
+  $('setSeizoen').value=G.ouder.seizoen||'';$('setBlz').value=G.ouder.blz||2;$('setZin').value=G.ouder.zin||'1';$('setDoos').value=G.ouder.doos||'1';
+  $('ouderBeloningen').innerHTML=G.ouder.beloningen.map((b,i)=>'<div class="rij"><span>'+b.n+'</span><span>'+b.p+' punten <button class="kn grijs" data-i="'+i+'">Weg</button></span></div>').join('')||'<p class="mini">Nog geen.</p>';
+  $('ouderBeloningen').querySelectorAll('button').forEach(b=>b.onclick=()=>{G.ouder.beloningen.splice(+b.dataset.i,1);bewaar();vulOuder();});
+  $('ouderBevestig').innerHTML=G.ouder.bevestig.length?G.ouder.bevestig.map((b,i)=>'<div class="rij"><span>'+(G.profiles[b.speler]?G.profiles[b.speler].settings.naam:'?')+': '+b.n+' ('+b.p+' punten)</span><span><button class="kn grijs" data-i="'+i+'" data-a="ok">Gegeven</button><button class="kn grijs" data-i="'+i+'" data-a="terug">Terugbetalen</button></span></div>').join(''):'<p class="mini">Niets.</p>';
+  $('ouderBevestig').querySelectorAll('button').forEach(b=>b.onclick=()=>{const x=G.ouder.bevestig.splice(+b.dataset.i,1)[0];if(b.dataset.a==='terug'&&G.profiles[x.speler])G.profiles[x.speler].punten+=x.p;bewaar();vulOuder();});
+  const rows=Object.entries(FEATS).map(([k,n])=>{
+    const h=S.history.filter(x=>BANK[x.id]&&BANK[x.id].f.includes(k)); const g=h.filter(x=>x.ok==='goed').length;
+    const ms=h.filter(x=>x.ok==='goed'&&x.ms<20000).map(x=>x.ms); const gem=ms.length?Math.round(ms.reduce((a,b)=>a+b,0)/ms.length/100)/10+' s':'';
+    return '<tr><td>'+n+'</td><td>'+S.ratings[k]+'</td><td>'+(h.length?g+'/'+h.length:'')+'</td><td>'+gem+'</td></tr>';}).join('');
+  $('stats').innerHTML='<table><tr><th>Woordtype</th><th>Meting</th><th>Meteen goed</th><th>Leestijd</th></tr>'+rows+'</table><p class="mini">Meting start op 1000 en beweegt op en neer. Leestijd is het gemiddelde tot een woord meteen goed gelezen was; die klok ziet het kind niet.</p><p class="mini">Wedstrijden: '+S.matches+', beurten: '+S.history.length+', globale meting: '+Math.round(globaal())+' (hoogste '+Math.round(S.peak)+'), reeks: '+S.streak.n+' dagen.</p>';
+  const tel={};S.history.forEach(x=>{if(x.ok!=='goed'){tel[x.t]=(tel[x.t]||0)+1;}});
+  const l=Object.entries(tel).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([t,n])=>t+' ('+n+'x)').join(', ');
+  const kt={};S.history.forEach(x=>{if(x.fout){kt[x.fout]=(kt[x.fout]||0)+1;}});
+  const kl=Object.entries(kt).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([t,n])=>t+' ('+n+'x)').join(', ');
+  $('lastig').innerHTML=(l||'Nog geen.')+'<br><span class="mini">Lastige klankgroepen: '+(kl||'nog geen')+'. Tik tijdens het spel op een klankgroep om zelf aan te duiden waar het fout ging.</span>';
+  $('log').innerHTML='<table>'+S.history.slice(-25).reverse().map(x=>'<tr><td>'+x.t+'</td><td>'+x.ok+'</td><td>'+(x.bron==='mic'?'microfoon':x.bron==='ouder'?'ouder':'zelf verder')+'</td><td>'+(Math.round(x.ms/100)/10)+' s</td></tr>').join('')+'</table>';
+}
+
+// ---------- start ----------
+$('micStatus').textContent=SR?'Microfoon klaar':'Geen microfoon in deze browser, papa of mama beoordeelt';
+tekenThuis();
+if(gezinscode()) pullStand().then(ch=>{if(ch)tekenThuis();});
+</script>
+</body>
+</html>
